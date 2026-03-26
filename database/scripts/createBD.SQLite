@@ -1,0 +1,204 @@
+-- =====================================================
+-- ENABLE FOREIGN KEYS (MANDATORY IN SQLITE)
+-- =====================================================
+PRAGMA foreign_keys = ON;
+
+-- =====================================================
+-- DROP TABLES (SQLite does not support DROP DATABASE)
+-- =====================================================
+
+DROP TABLE IF EXISTS Payment;
+DROP TABLE IF EXISTS Payment_Status;
+DROP TABLE IF EXISTS Payment_Method;
+DROP TABLE IF EXISTS Reservation;
+DROP TABLE IF EXISTS Reservation_Status;
+DROP TABLE IF EXISTS Vehicle;
+DROP TABLE IF EXISTS Vehicle_Brand;
+DROP TABLE IF EXISTS Vehicle_Type;
+DROP TABLE IF EXISTS Vehicle_Category;
+DROP TABLE IF EXISTS "User";
+
+-- =====================================================
+-- TABLE: User
+-- =====================================================
+
+CREATE TABLE "User" (
+    idUser INTEGER PRIMARY KEY AUTOINCREMENT,
+    firstName TEXT NOT NULL,
+    lastName TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    passwordHash TEXT NOT NULL,
+    phone TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- TABLE: Vehicle_Category
+-- =====================================================
+
+CREATE TABLE Vehicle_Category (
+    idCategory INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Vehicle_Type
+-- =====================================================
+
+CREATE TABLE Vehicle_Type (
+    idType INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Vehicle_Brand
+-- =====================================================
+
+CREATE TABLE Vehicle_Brand (
+    idBrand INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Vehicle
+-- =====================================================
+
+CREATE TABLE Vehicle (
+    idVehicle INTEGER PRIMARY KEY AUTOINCREMENT,
+    idBrand INTEGER NOT NULL,
+    model TEXT NOT NULL,
+    idCategory INTEGER NOT NULL,
+    idType INTEGER NOT NULL,
+    dailyRate REAL NOT NULL,
+    capacity INTEGER NOT NULL,
+    imageUrl TEXT,
+
+    lastRevisionDate DATE NOT NULL,
+    nextRevisionDate DATE NOT NULL,
+    lastLegalizationDate DATE NOT NULL,
+
+    isActive INTEGER DEFAULT 1,
+
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (idBrand) REFERENCES Vehicle_Brand(idBrand),
+    FOREIGN KEY (idCategory) REFERENCES Vehicle_Category(idCategory),
+    FOREIGN KEY (idType) REFERENCES Vehicle_Type(idType)
+);
+
+-- =====================================================
+-- TABLE: Reservation_Status
+-- =====================================================
+
+CREATE TABLE Reservation_Status (
+    idReservationStatus INTEGER PRIMARY KEY AUTOINCREMENT,
+    statusName TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Reservation
+-- =====================================================
+
+CREATE TABLE Reservation (
+    idReservation INTEGER PRIMARY KEY AUTOINCREMENT,
+    idUser INTEGER NOT NULL,
+    idVehicle INTEGER NOT NULL,
+
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+
+    totalDays INTEGER NOT NULL,
+    totalPrice REAL NOT NULL,
+
+    idReservationStatus INTEGER NOT NULL DEFAULT 1,
+
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (idUser) REFERENCES "User"(idUser),
+    FOREIGN KEY (idVehicle) REFERENCES Vehicle(idVehicle),
+    FOREIGN KEY (idReservationStatus) REFERENCES Reservation_Status(idReservationStatus)
+);
+
+-- =====================================================
+-- TABLE: Payment_Method
+-- =====================================================
+
+CREATE TABLE Payment_Method (
+    idPaymentMethod INTEGER PRIMARY KEY AUTOINCREMENT,
+    methodName TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Payment_Status
+-- =====================================================
+
+CREATE TABLE Payment_Status (
+    idPaymentStatus INTEGER PRIMARY KEY AUTOINCREMENT,
+    statusName TEXT NOT NULL UNIQUE
+);
+
+-- =====================================================
+-- TABLE: Payment
+-- =====================================================
+
+CREATE TABLE Payment (
+    idPayment INTEGER PRIMARY KEY AUTOINCREMENT,
+    idReservation INTEGER NOT NULL,
+    idPaymentMethod INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    paymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    idPaymentStatus INTEGER NOT NULL DEFAULT 1,
+
+    FOREIGN KEY (idReservation) REFERENCES Reservation(idReservation),
+    FOREIGN KEY (idPaymentMethod) REFERENCES Payment_Method(idPaymentMethod),
+    FOREIGN KEY (idPaymentStatus) REFERENCES Payment_Status(idPaymentStatus)
+);
+
+-- =====================================================
+-- INDEXES FOR PERFORMANCE
+-- =====================================================
+
+CREATE INDEX idx_vehicle_search 
+ON Vehicle (model, dailyRate);
+
+CREATE INDEX idx_reservation_dates 
+ON Reservation (idVehicle, startDate, endDate);
+
+-- =====================================================
+-- SAMPLE DATA INSERTION
+-- =====================================================
+
+INSERT INTO Vehicle_Category (name) VALUES 
+('Sedan'), 
+('SUV'), 
+('Convertible'), 
+('Coupe');
+
+INSERT INTO Vehicle_Type (name) VALUES 
+('Luxury'), 
+('Sport'), 
+('Economy');
+
+INSERT INTO Vehicle_Brand (name) VALUES 
+('Mercedes-Benz'), 
+('BMW'), 
+('Audi'), 
+('Porsche');
+
+INSERT INTO Reservation_Status (statusName) VALUES 
+('Pending'), 
+('Confirmed'), 
+('Cancelled');
+
+INSERT INTO Payment_Method (methodName) VALUES 
+('Credit Card'), 
+('PayPal'), 
+('Bank Transfer');
+
+INSERT INTO Payment_Status (statusName) VALUES 
+('Pending'), 
+('Completed'), 
+('Failed');
