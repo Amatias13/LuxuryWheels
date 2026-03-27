@@ -1,57 +1,38 @@
-from flask import Flask, render_template, url_for, request
+import os
+from flask import Flask, render_template
 from database import init_db, db
 
-# Serve the project's asset files located under templates/assets at the URL path /assets
 app = Flask(__name__, static_folder='templates/assets', static_url_path='/assets')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-muda-em-producao')
 
-# Initialize DB
 init_db(app)
+
+import models as _models_pkg
+_models_pkg.load_models()
+
+# Blueprints com logica propria
+from routes.users import bp as users_bp
+from routes.reservations import bp as reservations_bp
+app.register_blueprint(users_bp)
+app.register_blueprint(reservations_bp)
+
+# Vehicles doesn't have custom logic, so we use a generic view
+from routes.generic_views import make_list_blueprint
+from models import Vehicle
+app.register_blueprint(make_list_blueprint('vehicles', '/car-list', Vehicle, 'car-list.html', context_key='vehicles'))
+
+# API generic /api/<model>
+from routes.generic_api import register_models as register_generic_models
+model_classes = [getattr(_models_pkg, name) for name in _models_pkg.__all__]
+register_generic_models(app, model_classes, prefix='/api')
 
 
 @app.route('/')
 def home():
-    return render_template('index.html', title='Home')
-
-
-@app.route('/car-list')
-def car_list():
-    # Fetch a simple list of vehicles from the existing SQLite DB
-    vehicles = []
-    try:
-        result = db.session.execute("SELECT idVehicle, model, dailyRate, imageUrl FROM Vehicle").fetchall()
-        for row in result:
-            vehicles.append({
-                'id': row[0],
-                'model': row[1],
-                'dailyRate': row[2],
-                'imageUrl': row[3]
-            })
-    except Exception:
-        vehicles = []
-    return render_template('car-list.html', title='Car List', vehicles=vehicles)
+    featured = [v.to_dict() for v in Vehicle.query.limit(4).all()]
+    return render_template('index.html', title='Home', featured=featured)
 
 
 @app.route('/contact')
 def contact():
-    return render_template('contact.html', title='Contact')
-
-
-@app.route('/login')
-def login():
-    return render_template('login.html', title='Login')
-
-
-@app.route('/register')
-def register():
-    return render_template('register.html', title='Register')
-
-
-@app.route('/reservation')
-def reservation():
-    # Optionally accept a vehicle_id query parameter
-    vehicle_id = request.args.get('vehicle_id')
-    return render_template('reservation.html', title='Reservation', vehicle_id=vehicle_id)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return render_template('contact.html', title='Contacto')

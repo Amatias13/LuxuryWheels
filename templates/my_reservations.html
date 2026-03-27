@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>As minhas reservas - Luxury Wheels</title>
+    <link href="assets/css/fontawesome.min.css" rel="stylesheet" />
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="assets/css/animate.css" rel="stylesheet" />
+    <link href="assets/css/main.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- header -->
+    <header class="header-section header-section--style2">
+      <div class="header-bottom">
+        <div class="container">
+          <nav class="navbar navbar-expand-lg p-0">
+            <a class="site-logo site-title" href="{{ url_for('home') }}">
+              <img alt="site-logo" src="assets/images/logo2.png" />
+            </a>
+            <button class="navbar-toggler" data-target="#navbarMain" data-toggle="collapse" type="button">
+              <span class="menu-toggle"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+              <ul class="navbar-nav main-menu m-auto">
+                <li><a href="{{ url_for('home') }}">Início</a></li>
+                <li><a href="{{ url_for('vehicles.list_view') }}">Carros</a></li>
+                <li><a href="{{ url_for('users.login') }}">Iniciar sessão</a></li>
+                <li><a href="{{ url_for('users.register') }}">Registar-se</a></li>
+                <li class="active"><a href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
+                <li><a href="{{ url_for('contact') }}">Contacte-nos</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- banner -->
+    <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <h2 class="page-title">As minhas reservas</h2>
+            <ol class="page-list">
+              <li>
+                <a href="{{ url_for('home') }}"><i class="fa fa-home"></i> Início</a>
+              </li>
+              <li>As minhas reservas</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- conteudo -->
+    <section class="pt-120 pb-120">
+      <div class="container">
+        <!-- flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} mb-30">{{ message }}</div>
+        {% endfor %} {% endif %} {% endwith %} {% if reservations %}
+        <div class="row">
+          {% for r in reservations %}
+          <div class="col-lg-6 mb-30">
+            <div class="car-item" style="border: 1px solid #eee; border-radius: 8px; padding: 20px">
+              <h4 class="title mb-10">Reserva #{{ r.id }}</h4>
+              <ul style="list-style: none; padding: 0">
+                <li><i class="fa fa-car"></i> Veículo ID: {{ r.vehicle_id }}</li>
+                <li><i class="fa fa-calendar"></i> De: <strong>{{ r.startDate }}</strong></li>
+                <li><i class="fa fa-calendar"></i> Até: <strong>{{ r.endDate }}</strong></li>
+                <li><i class="fa fa-clock-o"></i> Total de dias: <strong>{{ r.totalDays }}</strong></li>
+                <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
+              </ul>
+              <a class="cmn-btn mt-10" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ r.vehicle_id }}"> Reservar novamente </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <p style="font-size: 18px; color: #888">Ainda não tens reservas.</p>
+          <a class="cmn-btn mt-20" href="{{ url_for('vehicles.list_view') }}">Ver carros disponíveis</a>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="footer-section">
+      <div class="footer-top pt-60 pb-60">
+        <div class="container">
+          <div class="row">
+            <div class="col-lg-4 col-sm-8">
+              <div class="footer-widget widget-about">
+                <a class="footer-logo" href="{{ url_for('home') }}">
+                  <img alt="logo" src="assets/images/logo-footer.png" />
+                </a>
+              </div>
+            </div>
+            <div class="col-lg-4 col-sm-8">
+              <div class="footer-widget widget-address">
+                <h4 class="widget-title">Contacte-nos</h4>
+                <ul>
+                  <li><i class="fa fa-map-marker"></i><span>Lisboa, Portugal</span></li>
+                  <li><i class="fa fa-envelope"></i><span>info@luxurywheels.pt</span></li>
+                  <li><i class="fa fa-phone-square"></i><span>+351 999 999 999</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script src="assets/js/jquery-3.3.1.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/main.js"></script>
+  </body>
+</html>
