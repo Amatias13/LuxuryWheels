@@ -82,6 +82,32 @@ class Vehicle(db.Model):
 
         return True
 
+    def has_reservation_between(self, start_date, end_date, ignore_statuses=(3,)):
+        """Retorna True se existir uma reserva (não em estados ignorados) que se sobreponha ao intervalo fornecido."""
+        from models.Reservation import Reservation
+
+        for r in (
+            Reservation.query.filter_by(idVehicle=self.idVehicle)
+            .filter(Reservation.idReservationStatus.notin_(ignore_statuses))
+            .all()
+        ):
+            if start_date < r.endDate and end_date > r.startDate:
+                return True
+        return False
+
+    def has_reservation_on(self, day):
+        """Verifica se existe alguma reserva que inclua o dia (date object)."""
+        from models.Reservation import Reservation
+
+        for r in (
+            Reservation.query.filter_by(idVehicle=self.idVehicle)
+            .filter(Reservation.idReservationStatus != 3)
+            .all()
+        ):
+            if r.startDate <= day < r.endDate:
+                return True
+        return False
+
     def to_dict(self):
         return {
             "id": self.idVehicle,
@@ -103,5 +129,7 @@ class Vehicle(db.Model):
                 str(self.lastLegalizationDate) if self.lastLegalizationDate else None
             ),
             "isActive": self.isActive,
-            "available": self.is_available(),
+            # Por omissão, considerar disponível (detalhes por data são
+            # avaliados quando o intervalo é fornecido nas rotas).
+            "available": True,
         }

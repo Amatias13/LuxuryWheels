@@ -32,6 +32,7 @@
   <body>
     <!--  header-section start  -->
     {% include 'partials/navbar.html' %}
+ {% include 'partials/flash.html' %}
     <!-- inner-page-banner start -->
     <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
       <div class="container">
@@ -109,21 +110,5 @@
     <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
     <!-- main js link -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script>
-      // client-side password confirmation
-      (function(){
-        var form = document.querySelector('.registration-form');
-        if (!form) return;
-        form.addEventListener('submit', function(e){
-          var p = document.getElementById('password').value;
-          var rp = document.getElementById('re_password').value;
-          if (p !== rp) {
-            e.preventDefault();
-            alert('As palavras-passe não coincidem.');
-            return false;
-          }
-        });
-      })();
-    </script>
   </body>
 </html>

@@ -630,45 +630,14 @@
   // lightcase plugin init
   $('a[data-rel^=lightcase]').lightcase();
 
-  // Intercept forms with .confirm-form to show a Bootstrap modal instead of native confirm()
-  var pendingForm = null;
+  // Intercept forms with .confirm-form and use native confirm() dialog
   $(document).on('submit', '.confirm-form', function(e) {
-    e.preventDefault();
-    pendingForm = this;
     var msg = $(this).data('confirm') || 'Tem a certeza?';
-    $('#confirmModalMessage').text(msg);
-    // support both bootstrap v5 and v4 APIs
-    if (false) { // Bootstrap 5 disabled, using Bootstrap 4 below
-      var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-      console.log('[UX DEBUG] Showing confirmModal via bootstrap.Modal');
-      modal.show();
-    } else {
-      console.log('[UX DEBUG] Showing confirmModal via jQuery');
-      $('#confirmModal').modal('show');
+    if (!window.confirm(msg)) {
+      e.preventDefault();
+      return false;
     }
-  });
-  $('#confirmModalOk').on('click', function() {
-    if (pendingForm) {
-      try {
-        // call native submit to avoid re-triggering jQuery submit handlers
-        HTMLFormElement.prototype.submit.call(pendingForm);
-      } catch (e) {
-        try { pendingForm.submit(); } catch(e2){}
-      }
-      pendingForm = null;
-      // small defensive cleanup: remove any leftover backdrops shortly after submit
-      setTimeout(function(){
-        try { $('.modal-backdrop').remove(); } catch(e){}
-        try { $('body').removeClass('modal-open'); } catch(e){}
-      }, 100);
-    }
-    if (false) { // Bootstrap 5 disabled, using Bootstrap 4 below
-      var modalEl = document.getElementById('confirmModal');
-      var modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
-    } else {
-      $('#confirmModal').modal('hide');
-    }
+    // allow the form to submit normally
   });
 
   // Global debug hooks: log modal show/hide events and ensure no leftover backdrops remain
@@ -699,6 +668,46 @@
       }
     }, 300);
   });
+
+  // Auto-show flash modal if server rendered a flash with category 'modal' or 'modal-error'
+  try {
+    $(function(){
+      var fm = $('#flash-modal-msg');
+      if (!fm.length) return;
+      var msg = fm.data('message') || '';
+      var type = fm.data('type') || '';
+      var modalId = 'flashModalAuto';
+      // Build a minimal Bootstrap modal and append to body
+      var title = type === 'modal-error' ? 'Erro' : 'Aviso';
+      var modalHtml = '' +
+        '<div class="modal fade" id="' + modalId + '" tabindex="-1" role="dialog" aria-hidden="true">' +
+          '<div class="modal-dialog modal-dialog-centered" role="document">' +
+            '<div class="modal-content">' +
+              '<div class="modal-header">' +
+                '<h5 class="modal-title">' + title + '</h5>' +
+                '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                  '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+              '</div>' +
+              '<div class="modal-body">' + msg + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      try { $('body').append(modalHtml); } catch(e) { console.warn('append flash modal failed', e); }
+      // Show modal via Bootstrap if available, otherwise fallback to alert
+      try {
+        var $m = $('#' + modalId);
+        if ($m && $m.modal) {
+          $m.modal('show');
+        } else {
+          alert(msg);
+        }
+      } catch(e) {
+        console.warn('show flash modal failed', e);
+        try { alert(msg); } catch(_){}
+      }
+    });
+  } catch(e) { console.warn('flash-modal init error', e); }
 
 
 })(jQuery);

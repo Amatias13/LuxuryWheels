@@ -16,6 +16,20 @@ bp = Blueprint("reservations", __name__)
 def reservation():
     vehicle_id = request.args.get("vehicle_id")
     vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
+    # Ler possíveis filtros de datas (ISO: YYYY-MM-DD)
+    start_date = None
+    end_date = None
+    start_raw = request.args.get("startDate")
+    end_raw = request.args.get("endDate")
+    if start_raw and end_raw:
+        try:
+            from datetime import date
+
+            start_date = date.fromisoformat(start_raw)
+            end_date = date.fromisoformat(end_raw)
+        except Exception:
+            start_date = None
+            end_date = None
     # Se foi fornecido um id mas não existe veículo correspondente
     if vehicle_id and not vehicle:
         flash("Veículo não encontrado.", "modal-error")
@@ -23,16 +37,35 @@ def reservation():
     # If a specific vehicle was requested but it's not available, block access
     if vehicle_id and vehicle:
         try:
-            if not vehicle.is_available():
+            if not vehicle.is_available(start_date, end_date):
                 flash("Veículo indisponível.", "modal-error")
                 return redirect(url_for("vehicles.list_view"))
         except Exception:
             # if availability check errors, be conservative and block
             flash("Veículo indisponível.", "modal-error")
             return redirect(url_for("vehicles.list_view"))
+    # Disponibilidade do veículo (para controlar botão no template)
+    vehicle_available = True
+    if vehicle:
+        try:
+            vehicle_available = vehicle.is_available(start_date, end_date)
+        except Exception:
+            vehicle_available = False
     payment_methods = [p.to_dict() for p in PaymentMethod.query.all()]
     extras = [e.to_dict() for e in ReservationExtra.query.filter_by(isActive=1).all()]
-    vehicles = [v.to_dict() for v in Vehicle.query.filter_by(isActive=1).all()]
+    # Listar apenas veículos ativos. Se datas forem fornecidas, filtrar
+    # apenas veículos disponíveis nesse intervalo.
+    vehicles_q = Vehicle.query.filter_by(isActive=1).all()
+    vehicles = []
+    for v in vehicles_q:
+        try:
+            if start_date and end_date:
+                if not v.is_available(start_date, end_date):
+                    continue
+        except Exception:
+            # Em caso de erro ao validar disponibilidade, pular o veículo
+            continue
+        vehicles.append(v.to_dict())
     testimonials = [t.to_dict() for t in Testimonial.query.filter_by(isActive=1).all()]
     return render_template(
         "reservation.html",
@@ -41,7 +74,10 @@ def reservation():
         payment_methods=payment_methods,
         extras=extras,
         vehicles=vehicles,
+        startDate=start_raw,
+        endDate=end_raw,
         testimonials=testimonials,
+        vehicle_available=vehicle_available,
     )
 
 
@@ -49,7 +85,7 @@ def reservation():
 def my_reservations():
     if "user_id" not in session:
         flash("Faça login para ver as suas reservas", "modal-error")
-        return redirect(url_for("users.login"))
+        return
 
     reservations = Reservation.query.filter_by(idUser=session["user_id"]).all()
     data = []
@@ -74,7 +110,7 @@ def my_reservations():
 def reserve():
     if "user_id" not in session:
         flash("Faça login para fazer uma reserva", "modal-error")
-        return redirect(url_for("users.login"))
+        return 
     try:
         vehicle_id_str = request.form.get("vehicle_id")
         if not vehicle_id_str:
@@ -155,7 +191,7 @@ def reserve():
 def cancel_reservation(rid):
     if "user_id" not in session:
         flash("Faça login para cancelar uma reserva", "modal-error")
-        return redirect(url_for("users.login"))
+        return
     try:
         reservation = Reservation.cancel(rid, session["user_id"])
         db.session.commit()
@@ -169,7 +205,7 @@ def cancel_reservation(rid):
 def edit_reservation(rid):
     if "user_id" not in session:
         flash("Faça login para editar uma reserva", "modal-error")
-        return redirect(url_for("users.login"))
+        return
 
     reservation = Reservation.query.filter_by(
         idReservation=rid, idUser=session["user_id"]

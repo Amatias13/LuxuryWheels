@@ -31,6 +31,7 @@
   </head>
   <body>
     {% include 'partials/navbar.html' %}
+    {% include 'partials/flash.html' %}
     <!-- inner-apge-banner start -->
     <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
       <div class="container">
@@ -176,7 +177,7 @@
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-calendar"></i>
-                        <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
+                        <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" value="{{ startDate or '' }}" />
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-clock-o"></i>
@@ -184,7 +185,7 @@
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-calendar"></i>
-                        <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
+                        <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" value="{{ endDate or '' }}" />
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-clock-o"></i>

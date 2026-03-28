@@ -88,8 +88,9 @@ class Reservation(db.Model):
 
         total_price += extras_total
 
-        # T4: marcar veiculo como inativo (mantemos para compatibilidade com fluxo atual)
-        vehicle.isActive = 0
+        # Nota: não marcar `isActive` aqui — disponibilidade é determinada por
+        # reservas nos intervalos de data. Manter `isActive` para indicar se o
+        # veículo existe/está ativo no catálogo, não para bloquear por reservas.
 
         reservation = cls(
             idUser=data["idUser"],
@@ -123,10 +124,8 @@ class Reservation(db.Model):
         if reservation.startDate and (reservation.startDate - today).days < 1:
             raise ValueError("Cancelamento não permitido nas 24 horas anteriores ao início da reserva")
 
-        # Recolocar veiculo disponivel
+        # Não alterar `isActive` ao cancelar — apenas marcar reserva como cancelada.
         vehicle = Vehicle.query.get(reservation.idVehicle)
-        if vehicle:
-            vehicle.isActive = 1
 
         reservation.idReservationStatus = 3  # Cancelada
 
