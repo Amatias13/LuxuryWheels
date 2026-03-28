@@ -217,13 +217,15 @@
     var days = 0;
     if (sd && ed) {
       days = daysBetween(sd, ed);
+      if (!isFinite(days) || days < 0) days = 0;
     }
     var extrasTotal = 0;
     form.find('.extra-checkbox:checked').each(function () {
       var p = parseFloat($(this).data('daily-price')) || 0;
       extrasTotal += p * days;
     });
-    var total = (dailyRate * days) + extrasTotal;
+    var total = (Number(dailyRate) * Number(days)) + Number(extrasTotal);
+    if (!isFinite(total)) total = 0;
     $('#reservation-total').text(total.toFixed(2));
     $('#reservation-total_inline').text(total.toFixed(2));
     $('#reservation-days').text(days);
@@ -260,11 +262,32 @@
       }
       return false;
     }
+    // validate dates before submit
+    var sd_raw = $('#startDate').val();
+    var ed_raw = $('#endDate').val();
+    var sd_d = parseDateYMD(sd_raw);
+    var ed_d = parseDateYMD(ed_raw);
+    var today = new Date();
+    // zero time for comparison
+    today.setHours(0,0,0,0);
+    if (!sd_d || !ed_d) {
+      e.preventDefault();
+      alert('Por favor seleccione datas válidas de início e fim.');
+      return false;
+    }
+    if (sd_d < today) {
+      e.preventDefault();
+      alert('A data de início não pode ser anterior a hoje.');
+      return false;
+    }
+    if (ed_d <= sd_d) {
+      e.preventDefault();
+      alert('A data de fim deve ser posterior à data de início.');
+      return false;
+    }
     // convert date inputs to ISO before submit to avoid backend ambiguity
-    var sd = $('#startDate').val();
-    var ed = $('#endDate').val();
-    $('#startDate').val(formatToISO(sd));
-    $('#endDate').val(formatToISO(ed));
+    $('#startDate').val(formatToISO(sd_raw));
+    $('#endDate').val(formatToISO(ed_raw));
     // allow submit to continue
   });
 

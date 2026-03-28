@@ -24,6 +24,7 @@ app.register_blueprint(payment_methods_bp)
 
 from routes.generic_views import make_list_blueprint
 from models import Vehicle, VehicleType, VehicleCategory, VehicleBrand, Testimonial
+from models import User
 
 app.register_blueprint(
     make_list_blueprint(
@@ -64,3 +65,15 @@ def home():
 @app.route("/contact")
 def contact():
     return render_template("contact.html", title="Contacto")
+
+
+@app.context_processor
+def inject_current_user():
+    from flask import session
+    user = None
+    try:
+        if session.get('user_id'):
+            user = User.query.get(session.get('user_id'))
+    except Exception:
+        user = None
+    return {'current_user': user}

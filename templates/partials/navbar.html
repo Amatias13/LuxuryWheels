@@ -14,7 +14,8 @@
           <ul class="navbar-nav main-menu m-auto">
             <li><a href="{{ url_for('home') }}">Início</a></li>
             <li><a href="{{ url_for('vehicles.list_view') }}">Carros</a></li>
-            {% if session.get('user_id') %}
+            {% if current_user %}
+              <li class="nav-item"><span class="nav-link">Olá {{ current_user.firstName }}</span></li>
               <li><a href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
               <li><a href="{{ url_for('users.logout') }}">Sair</a></li>
             {% else %}
@@ -27,4 +28,5 @@
       </nav>
     </div>
   </div>
+  {% include 'partials/flash.html' %}
 </header>
