@@ -70,44 +70,19 @@
                   <div class="content-block">
                     <h3 class="title">benefícios e taxas extra</h3>
                     <div class="row">
+                      {% for e in extras %}
                       <div class="col-lg-6">
                         <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck1" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck1">televisão $05 per day</label>
+                          <input class="foum-check-input" id="extra_{{ e.id }}" type="checkbox" name="extras" value="{{ e.id }}" />
+                          <label class="foum-check-label" for="extra_{{ e.id }}">
+                            {{ e.name }}{% if e.dailyPrice > 0 %} — {{ e.dailyPrice }}€/dia{% endif %}
+                          </label>
                         </div>
                       </div>
-                      <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck2" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck2">cadeira de criança</label>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck3" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck3">backfast &amp; lunch $20 per day</label>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck4" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck4">seguros do carro</label>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck5" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck5">ar condicionado $35 per day</label>
-                        </div>
-                      </div>
-                      <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="exampleCheck6" type="checkbox" />
-                          <label class="foum-check-label" fou="exampleCheck6">security &amp; safety</label>
-                        </div>
-                      </div>
+                      {% endfor %}
                     </div>
-                    <div class="row">
+                  </div>
+                  <div class="row">
                       <div class="foum-group col-md-6">
                         <i class="fa fa-map-marker"></i>
                         <input class="foum-control has-icon" placeholder="Local de levantamento" type="text" />
@@ -165,11 +140,11 @@
                     <h3 class="title">método de pagamento</h3>
                     <div class="row">
                       <div class="col-lg-6 foum-group">
-                        <select>
-                          <option>Selecionar método de pagamento</option>
-                          <option>Paypal</option>
-                          <option>Payoneer</option>
-                          <option>Visa Card</option>
+                        <select name="idPaymentMethod">
+                          <option value="">Selecionar método de pagamento</option>
+                          {% for pm in payment_methods %}
+                          <option value="{{ pm.id }}">{{ pm.methodName }}</option>
+                          {% endfor %}
                         </select>
                       </div>
                     </div>
@@ -194,33 +169,36 @@
             <aside class="sidebar">
               <div class="widget widget-all-cars">
                 <h4 class="widget-title">todos os nossos carros</h4>
-                <ul class="cars-list">
-                  <li><a href="#0">mistubisshi</a></li>
-                  <li><a href="#0">fouester subar</a></li>
-                  <li><a href="#0">subary liberty</a></li>
-                  <li><a href="#0">pajero range</a></li>
-                  <li><a href="#0">volkswagen</a></li>
-                </ul>
+                {% for v in vehicles %}
+                  <li><a href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">{{ v.model }}</a></li>
+                  {% endfor %}
               </div>
               <div class="widget widget-testemunho">
                 <h4 class="widget-title">testemunho</h4>
                 <div class="widget-body">
                   <div class="testemunho-slider owl-carousel">
+                    {% for t in testimonials %}
                     <div class="testemunho-item">
                       <div class="testemunho-item--header">
-                        <div class="thumb"><img alt="image" src="assets/images/testemunho/1.jpg" /></div>
+                        <div class="thumb">
+                          {% if t.imageUrl %}
+                          <img alt="{{ t.name }}" src="/assets/images/{{ t.imageUrl }}" />
+                          {% endif %}
+                        </div>
                         <div class="content">
-                          <h6 class="name">martin hook</h6>
-                          <span class="designation">empresário</span>
+                          <h6 class="name">{{ t.name }}</h6>
+                          <span class="designation">{{ t.designation }}</span>
                         </div>
                       </div>
                       <div class="testemunho-item--body">
-                        <p>Tristique consequat, louem sed vivamus donec eget, nulla pharetra lacinia wisi diamaliquam velit nec.</p>
+                        <p>{{ t.description }}</p>
                       </div>
                     </div>
+                    {% endfor %}
                   </div>
                 </div>
               </div>
+            </aside>
               <!-- widget end -->
             </aside>
           </div>

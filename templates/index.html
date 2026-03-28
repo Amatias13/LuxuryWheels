@@ -42,13 +42,11 @@
               <form class="car-search-form">
                 <div class="row">
                   <div class="col-xl-12 form-group">
-                    <select>
-                      <option selected="" value="1">Escolha o Tipo de Carro</option>
-                      <option value="2">Car type one</option>
-                      <option value="3">Car type Two</option>
-                      <option value="4">Car type Three</option>
-                      <option value="5">Car type Four</option>
-                      <option value="6">Car type Five</option>
+                    <select name="type_filter">
+                      <option value="">Escolha o Tipo de Carro</option>
+                      {% for t in types %}
+                      <option value="{{ t.id }}">{{ t.name }}</option>
+                      {% endfor %}
                     </select>
                   </div>
                 </div>

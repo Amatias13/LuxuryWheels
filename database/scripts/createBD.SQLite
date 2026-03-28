@@ -1,27 +1,27 @@
 -- =====================================================
--- ENABLE FOREIGN KEYS (MANDATORY IN SQLITE)
+-- ENABLE FOREIGN KEYS
 -- =====================================================
 PRAGMA foreign_keys = ON;
 
 -- =====================================================
--- DROP TABLES (SQLite does not support DROP DATABASE)
+-- DROP TABLES
 -- =====================================================
-
 DROP TABLE IF EXISTS Payment;
 DROP TABLE IF EXISTS Payment_Status;
 DROP TABLE IF EXISTS Payment_Method;
+DROP TABLE IF EXISTS Reservation_Extra;
 DROP TABLE IF EXISTS Reservation;
 DROP TABLE IF EXISTS Reservation_Status;
 DROP TABLE IF EXISTS Vehicle;
 DROP TABLE IF EXISTS Vehicle_Brand;
 DROP TABLE IF EXISTS Vehicle_Type;
 DROP TABLE IF EXISTS Vehicle_Category;
+DROP TABLE IF EXISTS Testimonial;
 DROP TABLE IF EXISTS "User";
 
 -- =====================================================
 -- TABLE: User
 -- =====================================================
-
 CREATE TABLE "User" (
     idUser INTEGER PRIMARY KEY AUTOINCREMENT,
     firstName TEXT NOT NULL,
@@ -36,7 +36,6 @@ CREATE TABLE "User" (
 -- =====================================================
 -- TABLE: Vehicle_Category
 -- =====================================================
-
 CREATE TABLE Vehicle_Category (
     idCategory INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -45,7 +44,6 @@ CREATE TABLE Vehicle_Category (
 -- =====================================================
 -- TABLE: Vehicle_Type
 -- =====================================================
-
 CREATE TABLE Vehicle_Type (
     idType INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -54,7 +52,6 @@ CREATE TABLE Vehicle_Type (
 -- =====================================================
 -- TABLE: Vehicle_Brand
 -- =====================================================
-
 CREATE TABLE Vehicle_Brand (
     idBrand INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE
@@ -63,7 +60,6 @@ CREATE TABLE Vehicle_Brand (
 -- =====================================================
 -- TABLE: Vehicle
 -- =====================================================
-
 CREATE TABLE Vehicle (
     idVehicle INTEGER PRIMARY KEY AUTOINCREMENT,
     idBrand INTEGER NOT NULL,
@@ -73,16 +69,12 @@ CREATE TABLE Vehicle (
     dailyRate REAL NOT NULL,
     capacity INTEGER NOT NULL,
     imageUrl TEXT,
-
     lastRevisionDate DATE NOT NULL,
     nextRevisionDate DATE NOT NULL,
     lastLegalizationDate DATE NOT NULL,
-
     isActive INTEGER DEFAULT 1,
-
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (idBrand) REFERENCES Vehicle_Brand(idBrand),
     FOREIGN KEY (idCategory) REFERENCES Vehicle_Category(idCategory),
     FOREIGN KEY (idType) REFERENCES Vehicle_Type(idType)
@@ -91,7 +83,6 @@ CREATE TABLE Vehicle (
 -- =====================================================
 -- TABLE: Reservation_Status
 -- =====================================================
-
 CREATE TABLE Reservation_Status (
     idReservationStatus INTEGER PRIMARY KEY AUTOINCREMENT,
     statusName TEXT NOT NULL UNIQUE
@@ -100,23 +91,17 @@ CREATE TABLE Reservation_Status (
 -- =====================================================
 -- TABLE: Reservation
 -- =====================================================
-
 CREATE TABLE Reservation (
     idReservation INTEGER PRIMARY KEY AUTOINCREMENT,
     idUser INTEGER NOT NULL,
     idVehicle INTEGER NOT NULL,
-
     startDate DATE NOT NULL,
     endDate DATE NOT NULL,
-
     totalDays INTEGER NOT NULL,
     totalPrice REAL NOT NULL,
-
     idReservationStatus INTEGER NOT NULL DEFAULT 1,
-
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (idUser) REFERENCES "User"(idUser),
     FOREIGN KEY (idVehicle) REFERENCES Vehicle(idVehicle),
     FOREIGN KEY (idReservationStatus) REFERENCES Reservation_Status(idReservationStatus)
@@ -125,7 +110,6 @@ CREATE TABLE Reservation (
 -- =====================================================
 -- TABLE: Payment_Method
 -- =====================================================
-
 CREATE TABLE Payment_Method (
     idPaymentMethod INTEGER PRIMARY KEY AUTOINCREMENT,
     methodName TEXT NOT NULL UNIQUE
@@ -134,7 +118,6 @@ CREATE TABLE Payment_Method (
 -- =====================================================
 -- TABLE: Payment_Status
 -- =====================================================
-
 CREATE TABLE Payment_Status (
     idPaymentStatus INTEGER PRIMARY KEY AUTOINCREMENT,
     statusName TEXT NOT NULL UNIQUE
@@ -143,7 +126,6 @@ CREATE TABLE Payment_Status (
 -- =====================================================
 -- TABLE: Payment
 -- =====================================================
-
 CREATE TABLE Payment (
     idPayment INTEGER PRIMARY KEY AUTOINCREMENT,
     idReservation INTEGER NOT NULL,
@@ -151,54 +133,107 @@ CREATE TABLE Payment (
     amount REAL NOT NULL,
     paymentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     idPaymentStatus INTEGER NOT NULL DEFAULT 1,
-
     FOREIGN KEY (idReservation) REFERENCES Reservation(idReservation),
     FOREIGN KEY (idPaymentMethod) REFERENCES Payment_Method(idPaymentMethod),
     FOREIGN KEY (idPaymentStatus) REFERENCES Payment_Status(idPaymentStatus)
 );
 
 -- =====================================================
--- INDEXES FOR PERFORMANCE
+-- TABLE: Reservation_Extra
 -- =====================================================
-
-CREATE INDEX idx_vehicle_search 
-ON Vehicle (model, dailyRate);
-
-CREATE INDEX idx_reservation_dates 
-ON Reservation (idVehicle, startDate, endDate);
+CREATE TABLE Reservation_Extra (
+    idExtra INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dailyPrice REAL NOT NULL DEFAULT 0,
+    isActive INTEGER DEFAULT 1
+);
 
 -- =====================================================
--- SAMPLE DATA INSERTION
+-- TABLE: Testimonial
 -- =====================================================
+CREATE TABLE Testimonial (
+    idTestimonial INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    designation TEXT,
+    description TEXT NOT NULL,
+    imageUrl TEXT,
+    isActive INTEGER DEFAULT 1
+);
 
-INSERT INTO Vehicle_Category (name) VALUES 
-('Sedan'), 
-('SUV'), 
-('Convertible'), 
-('Coupe');
+-- =====================================================
+-- INDEXES
+-- =====================================================
+CREATE INDEX idx_vehicle_search ON Vehicle (model, dailyRate);
+CREATE INDEX idx_reservation_dates ON Reservation (idVehicle, startDate, endDate);
 
-INSERT INTO Vehicle_Type (name) VALUES 
-('Luxury'), 
-('Sport'), 
-('Economy');
+-- =====================================================
+-- DATA: Vehicle_Category
+-- =====================================================
+INSERT INTO Vehicle_Category (name) VALUES
+('Sedan'), ('SUV'), ('Convertible'), ('Coupe'), ('Hatchback'), ('Moto');
 
-INSERT INTO Vehicle_Brand (name) VALUES 
-('Mercedes-Benz'), 
-('BMW'), 
-('Audi'), 
-('Porsche');
+-- =====================================================
+-- DATA: Vehicle_Type
+-- =====================================================
+INSERT INTO Vehicle_Type (name) VALUES
+('Luxo'), ('Desportivo'), ('Económico'), ('Elétrico'), ('Clássico');
 
-INSERT INTO Reservation_Status (statusName) VALUES 
-('Pending'), 
-('Confirmed'), 
-('Cancelled');
+-- =====================================================
+-- DATA: Vehicle_Brand
+-- =====================================================
+INSERT INTO Vehicle_Brand (name) VALUES
+('Mercedes-Benz'), ('BMW'), ('Audi'), ('Porsche'),
+('Ferrari'), ('Lamborghini'), ('Bentley'), ('Rolls-Royce'),
+('Tesla'), ('Maserati');
 
-INSERT INTO Payment_Method (methodName) VALUES 
-('Credit Card'), 
-('PayPal'), 
-('Bank Transfer');
+-- =====================================================
+-- DATA: Reservation_Status
+-- =====================================================
+INSERT INTO Reservation_Status (statusName) VALUES
+('Pendente'), ('Confirmada'), ('Cancelada'), ('Concluída');
 
-INSERT INTO Payment_Status (statusName) VALUES 
-('Pending'), 
-('Completed'), 
-('Failed');
+-- =====================================================
+-- DATA: Payment_Method
+-- =====================================================
+INSERT INTO Payment_Method (methodName) VALUES
+('Cartão de Crédito'), ('PayPal'), ('Transferência Bancária'), ('MB Way');
+
+-- =====================================================
+-- DATA: Payment_Status
+-- =====================================================
+INSERT INTO Payment_Status (statusName) VALUES
+('Pendente'), ('Concluído'), ('Falhado'), ('Reembolsado');
+
+-- =====================================================
+-- DATA: Reservation_Extra
+-- =====================================================
+INSERT INTO Reservation_Extra (name, dailyPrice) VALUES
+('Cadeira de criança', 10),
+('Seguros do carro', 15),
+('Ar condicionado extra', 35),
+('GPS', 8),
+('Wi-Fi portátil', 6);
+
+-- =====================================================
+-- DATA: Testimonial
+-- =====================================================
+INSERT INTO Testimonial (name, designation, description) VALUES
+('Martin Hook', 'Empresário', 'Serviço excecional, carro impecável e entrega pontual. Recomendo vivamente!'),
+('Ana Silva', 'Advogada', 'Experiência fantástica do início ao fim. Voltarei com certeza.'),
+('João Costa', 'Médico', 'Frota de luxo a preços justos. Atendimento de excelência.');
+
+-- =====================================================
+-- DATA: Vehicle (dados de exemplo completos)
+-- datas validas: revisao e legalizacao dentro de prazo
+-- =====================================================
+INSERT INTO Vehicle (idBrand, model, idCategory, idType, dailyRate, capacity, imageUrl, lastRevisionDate, nextRevisionDate, lastLegalizationDate) VALUES
+(1, 'Mercedes-Benz C300',  1, 1, 150.00, 5, '1.jpg', '2024-06-01', '2026-06-01', '2024-11-01'),
+(2, 'M3',              4, 2, 200.00, 4, '2.jpg', '2024-08-01', '2026-08-01', '2025-01-01'),
+(3, 'A4',             1, 1, 130.00, 5, '3.jpg', '2024-07-01', '2026-07-01', '2024-12-01'),
+(4, '911',         4, 2, 350.00, 2, '4.jpg', '2024-09-01', '2026-09-01', '2025-02-01'),
+(5, 'F8',          4, 2, 800.00, 2, '5.jpg', '2024-10-01', '2026-10-01', '2025-03-01'),
+(6, 'Huracan', 4, 2, 900.00, 2, '6.jpg', '2024-11-01', '2026-11-01', '2025-04-01'),
+(7, 'Continental', 3, 1, 600.00, 4, '7.jpg', '2024-05-01', '2026-05-01', '2024-10-01'),
+(8, 'Ghost',   1, 1, 750.00, 5, '8.jpg', '2024-04-01', '2026-04-01', '2024-09-01'),
+(9, 'Model S',       1, 4, 180.00, 5, '9.jpg', '2024-12-01', '2026-12-01', '2025-05-01'),
+(10,'Ghibli',     1, 1, 280.00, 5, 'v2.jpg','2024-03-01', '2026-03-01', '2024-08-01');

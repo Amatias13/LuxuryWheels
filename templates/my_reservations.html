@@ -63,19 +63,31 @@
         <div class="row">
           {% for r in reservations %}
           <div class="col-lg-6 mb-30">
-            <div class="car-item" style="border: 1px solid #eee; border-radius: 8px; padding: 20px">
-              <h4 class="title mb-10">Reserva #{{ r.id }}</h4>
-              <ul style="list-style: none; padding: 0">
-                <li><i class="fa fa-car"></i> Veículo ID: {{ r.vehicle_id }}</li>
-                <li><i class="fa fa-calendar"></i> De: <strong>{{ r.startDate }}</strong></li>
-                <li><i class="fa fa-calendar"></i> Até: <strong>{{ r.endDate }}</strong></li>
-                <li><i class="fa fa-clock-o"></i> Total de dias: <strong>{{ r.totalDays }}</strong></li>
-                <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
-              </ul>
-              <a class="cmn-btn mt-10" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ r.vehicle_id }}"> Reservar novamente </a>
+              <div class="car-item" style="border:1px solid #eee;border-radius:8px;padding:20px;">
+                <h4 class="title mb-10">{{ r.vehicle_brand }} {{ r.vehicle_model }}</h4>
+                <span class="badge" style="background:#f5f5f5;padding:4px 10px;border-radius:4px;font-size:12px;">
+                  {{ r.status_name }}
+                </span>
+                <ul style="list-style:none;padding:0;margin-top:12px;">
+                  <li><i class="fa fa-calendar"></i> Início: <strong>{{ r.startDate }}</strong></li>
+                  <li><i class="fa fa-calendar"></i> Fim: <strong>{{ r.endDate }}</strong></li>
+                  <li><i class="fa fa-clock-o"></i> Dias: <strong>{{ r.totalDays }}</strong></li>
+                  <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
+                </ul>
+                {% if r.can_edit %}
+                <div style="display:flex;gap:10px;margin-top:12px;">
+                  <a class="cmn-btn" href="{{ url_for('reservations.edit_reservation', rid=r.id) }}"
+                     style="padding:8px 16px;font-size:13px;">Editar datas</a>
+                  <form method="post" action="{{ url_for('reservations.cancel_reservation', rid=r.id) }}"
+                        onsubmit="return confirm('Cancelar esta reserva?')">
+                    <button type="submit" class="cmn-btn bg-black"
+                            style="padding:8px 16px;font-size:13px;">Cancelar</button>
+                  </form>
+                </div>
+                {% endif %}
+              </div>
             </div>
-          </div>
-          {% endfor %}
+            {% endfor %}
         </div>
         {% else %}
         <div class="text-center py-5">

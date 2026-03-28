@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Editar Reserva - Luxury Wheels</title>
+  <link href="/assets/css/fontawesome.min.css" rel="stylesheet" />
+  <link href="/assets/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/assets/css/datepicker.min.css" rel="stylesheet" />
+  <link href="/assets/css/main.css" rel="stylesheet" />
+</head>
+<body>
+  {% include 'partials/navbar.html' %}
+
+  <section class="inner-page-banner bg_img overlay-3" data-background="/assets/images/inner-page-bg.jpg">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h2 class="page-title">Editar Reserva</h2>
+          <ol class="page-list">
+            <li><a href="{{ url_for('home') }}"><i class="fa fa-home"></i> Início</a></li>
+            <li><a href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
+            <li>Editar</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pt-120 pb-120">
+    <div class="container">
+      {% include 'partials/flash.html' %}
+      <div class="row justify-content-center">
+        <div class="col-lg-6">
+          <div style="border:1px solid #eee;border-radius:8px;padding:30px;">
+            <h3 class="title mb-20">
+              {{ vehicle.brand.name if vehicle and vehicle.brand else '' }}
+              {{ vehicle.model if vehicle else 'Veículo' }}
+            </h3>
+            <p>Total atual: <strong>{{ reservation.totalPrice }}€</strong>
+               ({{ reservation.totalDays }} dias a {{ vehicle.dailyRate if vehicle else 0 }}€/dia)</p>
+
+            <form method="post">
+              <div class="form-group">
+                <label>Data de início</label>
+                <input class="form-control datepicker-here" data-language="en"
+                       name="startDate" id="startDate"
+                       value="{{ reservation.startDate }}" required />
+              </div>
+              <div class="form-group mt-20">
+                <label>Data de fim</label>
+                <input class="form-control datepicker-here" data-language="en"
+                       name="endDate" id="endDate"
+                       value="{{ reservation.endDate }}" required />
+              </div>
+              <div class="mt-30" style="display:flex;gap:12px;">
+                <button class="cmn-btn" type="submit">Guardar alterações</button>
+                <a class="cmn-btn bg-black" href="{{ url_for('reservations.my_reservations') }}">Cancelar</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="/assets/js/jquery-3.3.1.min.js"></script>
+  <script src="/assets/js/bootstrap.min.js"></script>
+  <script src="/assets/js/datepicker.min.js"></script>
+  <script src="/assets/js/datepicker.en.js"></script>
+  <script src="/assets/js/main.js"></script>
+</body>
+</html>
