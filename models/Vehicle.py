@@ -15,13 +15,18 @@ class Vehicle(db.Model):
     idType = db.Column(db.Integer, db.ForeignKey("Vehicle_Type.idType"), nullable=False)
     dailyRate = db.Column(db.Float, nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
+    km = db.Column(db.Integer, nullable=False, server_default="0")
     imageUrl = db.Column(db.String)
     lastRevisionDate = db.Column(db.Date, nullable=False)
     nextRevisionDate = db.Column(db.Date, nullable=False)
     lastLegalizationDate = db.Column(db.Date, nullable=False)
     isActive = db.Column(db.Integer, default=1)
     createdAt = db.Column(db.DateTime, server_default=db.func.current_timestamp())
-    updatedAt = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    updatedAt = db.Column(
+        db.DateTime,
+        server_default=db.func.current_timestamp(),
+        onupdate=db.func.current_timestamp(),
+    )
 
     # Relacoes para aceder a nome da marca, categoria e tipo diretamente
     brand = db.relationship("VehicleBrand", foreign_keys=[idBrand], lazy="joined")
@@ -33,14 +38,18 @@ class Vehicle(db.Model):
     def is_available(self, start_date=None, end_date=None, exclude_reservation_id=None):
         """Verifica se o veiculo esta disponivel.
         Indisponivel se:
-        - isActive == 0 (reservado)
+        - isActive == 0 (reservado) — ignorado se for uma edicao da propria reserva
         - nextRevisionDate < hoje
         - lastLegalizationDate < hoje - 1 ano
-        - existe uma reserva confirmada/pendente que se sobrepoe ao intervalo solicitado (se fornecido)
+        - existe uma reserva confirmada/pendente que se sobrepoe ao intervalo solicitado
         """
         today = date.today()
-        if not self.isActive:
+
+        # So verificar isActive se NAO for uma edicao da propria reserva
+        # (ao editar, o veiculo ja esta inativo por causa desta mesma reserva)
+        if not self.isActive and not exclude_reservation_id:
             return False
+
         if self.nextRevisionDate and self.nextRevisionDate < today:
             return False
         if self.lastLegalizationDate and self.lastLegalizationDate < today - timedelta(
@@ -62,7 +71,10 @@ class Vehicle(db.Model):
             .all()
         ):
             # ignorar reserva corrente se pedida
-            if exclude_reservation_id and getattr(r, 'idReservation', None) == exclude_reservation_id:
+            if (
+                exclude_reservation_id
+                and getattr(r, "idReservation", None) == exclude_reservation_id
+            ):
                 continue
             # existe sobreposição se sd < r.endDate e ed > r.startDate
             if start_date < r.endDate and end_date > r.startDate:
@@ -79,6 +91,7 @@ class Vehicle(db.Model):
             "type": self.vtype.name if self.vtype else None,
             "dailyRate": self.dailyRate,
             "capacity": self.capacity,
+            "km": int(self.km) if getattr(self, "km", None) is not None else 0,
             "imageUrl": self.imageUrl,
             "lastRevisionDate": (
                 str(self.lastRevisionDate) if self.lastRevisionDate else None

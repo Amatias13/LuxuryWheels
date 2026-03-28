@@ -29,7 +29,7 @@
               <li>
                 <a href="{{ url_for('home') }}"><i class="fa fa-home"></i>Início</a>
               </li>
-              <li><a href="#0">car list</a></li>
+              <li><a href="#0">lista de carros</a></li>
               <li>reserva</li>
             </ol>
           </div>
@@ -48,11 +48,13 @@
               <div class="content">
                 <div class="content-block">
                   <h3 class="car-name">{{ vehicle.model if vehicle else 'Carro' }}</h3>
-                  <span class="price">Start from {{ vehicle.dailyRate if vehicle else 'N/A' }}€ per day</span>
+                  <span class="price">A partir de {{ vehicle.dailyRate if vehicle else 'N/A' }}€/dia</span>
                   <p>{{ vehicle_desc or 'Detalhes do carro' }}</p>
                 </div>
 
                 <form class="reserva-form" method="post" action="{{ url_for('reservations.reserve') }}" data-daily-rate="{{ vehicle.dailyRate if vehicle else 0 }}">
+                  <!-- Hidden field to reliably expose logged-in user id to client JS -->
+                  <input type="hidden" id="client-current-user" name="client_current_user" value="{{ '1' if is_logged_in else '' }}" />
                   <input type="hidden" name="vehicle_id" value="{{ vehicle.idVehicle if vehicle else '' }}" />
 
                   <div class="content-block">
@@ -82,7 +84,7 @@
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-calendar"></i>
-                      <input class="form-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
+                      <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-clock-o"></i>
@@ -90,7 +92,7 @@
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-calendar"></i>
-                      <input class="form-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
+                      <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-clock-o"></i>
@@ -144,7 +146,7 @@
                     <h3 class="title">informação adicional</h3>
                     <div class="row">
                       <div class="col-lg-12 form-group">
-                        <textarea name="notes" class="form-control" placeholder="Write additional information here"></textarea>
+                        <textarea name="notes" class="form-control" placeholder="Escreva informação adicional aqui"></textarea>
                       </div>
                       <div class="col-lg-12">
                         <div style="margin-bottom:14px;color:#666;font-size:14px;">Total estimado: <strong id="reservation-total_inline">0.00</strong>€</div>
@@ -153,7 +155,11 @@
                         <button class="cmn-btn" type="button" disabled>Indisponível</button>
                         <div class="text-danger mt-2">Veículo indisponível para as datas selecionadas.</div>
                         {% else %}
+                        {% if is_logged_in %}
                         <button class="cmn-btn" type="submit">reserva</button>
+                        {% else %}
+                        <a class="cmn-btn" href="{{ url_for('users.login') }}">reserva</a>
+                        {% endif %}
                         {% endif %}
                       </div>
                     </div>
@@ -216,25 +222,17 @@
 
     {% include 'partials/footer.html' %}
 
-    <script>
-      // expose current user id to JS (null if not logged)
-      (function(){
-        var val = document.body.getAttribute('data-current-user') || '';
-        window.CURRENT_USER = val === '' ? null : Number(val);
-      })();
-    </script>
-
-    <script src="assets/js/jquery-3.3.1.min.js"></script>
-    <script src="assets/js/jquery-migrate-3.0.0.js"></script>
-    <script src="assets/js/bootstrap.min.js"></script>
-    <script src="assets/js/lightcase.js"></script>
-    <script src="assets/js/wow.min.js"></script>
-    <script src="assets/js/jquery.nice-select.min.js"></script>
-    <script src="assets/js/datepicker.min.js"></script>
-    <script src="assets/js/datepicker.en.js"></script>
-    <script src="assets/js/wickedpicker.min.js"></script>
-    <script src="assets/js/owl.carousel.min.js"></script>
-    <script src="assets/js/jquery-ui.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

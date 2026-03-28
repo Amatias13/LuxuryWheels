@@ -10,32 +10,7 @@
     <link href="assets/css/main.css" rel="stylesheet" />
   </head>
   <body>
-    <!-- header -->
-    <header class="header-section header-section--style2">
-      <div class="header-bottom">
-        <div class="container">
-          <nav class="navbar navbar-expand-lg p-0">
-            <a class="site-logo site-title" href="{{ url_for('home') }}">
-              <img alt="site-logo" src="assets/images/logo2.png" />
-            </a>
-            <button class="navbar-toggler" data-target="#navbarMain" data-toggle="collapse" type="button">
-              <span class="menu-toggle"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarMain">
-              <ul class="navbar-nav main-menu m-auto">
-                <li><a href="{{ url_for('home') }}">Início</a></li>
-                <li><a href="{{ url_for('vehicles.list_view') }}">Carros</a></li>
-                <li><a href="{{ url_for('users.login') }}">Iniciar sessão</a></li>
-                <li><a href="{{ url_for('users.register') }}">Registar-se</a></li>
-                <li class="active"><a href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
-                <li><a href="{{ url_for('contact') }}">Contacte-nos</a></li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </header>
-
+   {% include 'partials/navbar.html' %}
     <!-- banner -->
     <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
       <div class="container">
@@ -95,35 +70,9 @@
       </div>
     </section>
 
-    <!-- footer -->
-    <footer class="footer-section">
-      <div class="footer-top pt-60 pb-60">
-        <div class="container">
-          <div class="row">
-            <div class="col-lg-4 col-sm-8">
-              <div class="footer-widget widget-about">
-                <a class="footer-logo" href="{{ url_for('home') }}">
-                  <img alt="logo" src="assets/images/logo-footer.png" />
-                </a>
-              </div>
-            </div>
-            <div class="col-lg-4 col-sm-8">
-              <div class="footer-widget widget-address">
-                <h4 class="widget-title">Contacte-nos</h4>
-                <ul>
-                  <li><i class="fa fa-map-marker"></i><span>Lisboa, Portugal</span></li>
-                  <li><i class="fa fa-envelope"></i><span>info@luxurywheels.pt</span></li>
-                  <li><i class="fa fa-phone-square"></i><span>+351 999 999 999</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-    <script src="assets/js/jquery-3.3.1.min.js"></script>
-    <script src="assets/js/bootstrap.min.js"></script>
-    <script src="assets/js/main.js"></script>
+    {% include 'partials/footer.html' %}
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

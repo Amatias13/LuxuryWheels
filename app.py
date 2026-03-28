@@ -71,9 +71,14 @@ def contact():
 def inject_current_user():
     from flask import session
     user = None
-    try:
-        if session.get('user_id'):
-            user = User.query.get(session.get('user_id'))
-    except Exception:
-        user = None
-    return {'current_user': user}
+    user_id = session.get('user_id')
+    if user_id:
+        try:
+            user = User.query.get(int(user_id))
+        except Exception:
+            pass
+    # sempre expor se ha sessao, mesmo que o objeto nao carregue
+    return {
+        'current_user': user,
+        'is_logged_in': bool(user_id),
+    }

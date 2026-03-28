@@ -65,22 +65,132 @@
       $(this).toggleClass("is-active");
   });
 
-  $('select').niceSelect();
+  try {
+    if ($.fn && $.fn.niceSelect) {
+      $('select').niceSelect();
+    } else {
+      console.warn('[UX DEBUG] niceSelect plugin not available, skipping init');
+    }
+  } catch(e) {
+    console.warn('[UX DEBUG] niceSelect init error', e);
+  }
 
   // Access instance of plugin
   // Initialize datepicker properly (accepts dd/mm/yyyy in UI but submits ISO)
   try {
+    // Ensure Portuguese localization exists for the datepicker (fallback)
+    try {
+      if (window.$ && $.fn && $.fn.datepicker && !$.fn.datepicker.language['pt']) {
+        $.fn.datepicker.language['pt'] = {
+          days: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'],
+          daysShort: ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],
+          daysMin: ['D','S','T','Q','Q','S','S'],
+          months: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+          monthsShort: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+          today: 'Hoje',
+          clear: 'Limpar',
+          dateFormat: 'dd/MM/yyyy',
+          timeFormat: 'hh:ii aa',
+          firstDay: 1
+        };
+      }
+    } catch(e){}
+    // ensure datepicker popup is above everything and clickable
+    try { $('head').append('<style id="ux-datepicker-fix">.ui-datepicker{z-index:20000 !important;} .ui-datepicker .ui-datepicker-header .ui-datepicker-next, .ui-datepicker .ui-datepicker-header .ui-datepicker-prev{cursor:pointer;pointer-events:auto;}</style>'); } catch(e) {}
+
     $('.datepicker-here').each(function() {
-      // air-datepicker initialization
-      $(this).datepicker({
-        language: 'en',
-        dateFormat: 'dd/MM/yyyy',
-        autoClose: true,
-        onSelect: function(fd, d, picker) {
-          // ensure total updates when user selects date
-          updateReservationTotal();
-        }
-      });
+      var $el = $(this);
+      // Prefer jQuery UI datepicker to avoid conflicts with multiple plugins
+      if (window.jQuery && jQuery.datepicker) {
+        try {
+          $el.datepicker('destroy');
+        } catch(e){}
+        try {
+          $el.datepicker({
+            dateFormat: 'dd/mm/yy',
+            minDate: 0,
+            appendTo: 'body',
+            prevText: '&#8249;',
+            nextText: '&#8250;',
+            changeMonth: true,
+            changeYear: true,
+            showOtherMonths: false,
+            monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+            monthNamesShort: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],
+            dayNamesMin: ['D','S','T','Q','Q','S','S'],
+            dayNamesShort: ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],
+            beforeShow: function(input, inst) {
+              // Garantir z-index alto depois do datepicker abrir
+              setTimeout(function() {
+                var dp = $('#ui-datepicker-div');
+                /* dp.css({ 'z-index': '99999', 'width': '280px' }); */
+                dp.find('.ui-datepicker-next, .ui-datepicker-prev').css({
+                  'display': 'block',
+                  'visibility': 'visible',
+                  'opacity': '1',
+                  'pointer-events': 'auto',
+                  'cursor': 'pointer'
+                });
+              }, 1);
+            },
+            onSelect: function(dateText, inst) {
+              try {
+                var parts = dateText.split('/');
+                if (parts.length === 3) {
+                  var dd = parts[0].length===1?('0'+parts[0]):parts[0];
+                  var mm = parts[1].length===1?('0'+parts[1]):parts[1];
+                  var yy = parts[2];
+                  if (yy.length === 2) {
+                    var curYear = new Date().getFullYear();
+                    var prefix = String(curYear).slice(0,2);
+                    yy = prefix + yy;
+                  }
+                  $el.val(dd + '/' + mm + '/' + yy);
+                  $el.trigger('change');
+                }
+              } catch(e){}
+              try { updateReservationTotal(); } catch(e){}
+              try { scheduleNormalize(this); } catch(e){}
+            }
+          });
+          try { $el.data('datepicker-initialized', 'jquery-ui'); } catch(e) {}
+          // Se o valor inicial for ISO (YYYY-MM-DD), converter para DD/MM/YYYY para display
+          try {
+            var initVal = $el.val();
+            if (initVal && /^\d{4}-\d{2}-\d{2}$/.test(initVal)) {
+              var p = initVal.split('-');
+              $el.val(p[2] + '/' + p[1] + '/' + p[0]);
+            }
+          } catch(e){}
+        } catch(e) { console.warn('[UX DEBUG] jQuery UI init failed', e); }
+      } else if ($.fn && $.fn.datepicker && $.fn.datepicker.language) {
+        // fallback to air-datepicker if jQuery UI is not available
+        try {
+          $el.datepicker({
+            language: 'pt',
+            dateFormat: 'dd/MM/yyyy',
+            autoClose: true,
+            minDate: new Date(),
+            prevHtml: '<',
+            nextHtml: '>',
+            onSelect: function(fd, d, picker) {
+              try {
+                if (d instanceof Date && !isNaN(d)) {
+                  var dd = (d.getDate()<10?('0'+d.getDate()):d.getDate());
+                  var mm = ((d.getMonth()+1)<10?('0'+(d.getMonth()+1)):(d.getMonth()+1));
+                  var yyyy = d.getFullYear();
+                  $el.val(dd + '/' + mm + '/' + yyyy);
+                }
+              } catch(e) {}
+              updateReservationTotal();
+              try { scheduleNormalize(this); } catch(e){}
+            }
+          });
+          try { $el.data('datepicker-initialized', 'air'); } catch(e) {}
+        } catch(e) { console.warn('[UX DEBUG] air-datepicker init failed', e); }
+      } else {
+        // no datepicker available; leave input as-is
+      }
     });
     // ensure the popup is on top
     $('.air-datepicker').css('z-index', 99999);
@@ -95,112 +205,139 @@
     twentyFour: false,
     title: 'Choose Your Time', 
   };
-  $('.timepicker').wickedpicker(options);
-
-  $('.choose-car-slider').owlCarousel({
-    loop:true,
-    margin:30,
-    smartSpeed: 800,
-    nav: true,
-    dots: false,
-    navText: ["<i class='fa fa-chevron-left'></i>", "<i class='fa fa-chevron-right'></i>"],
-    responsiveClass:true,
-    responsive:{
-        0:{
-            items: 1,
-            nav: true
-        },
-        768:{
-            items: 2,
-            nav: true
-        },
-        1000:{
-            items:3,
-            nav: true
-        }
+  try {
+    if ($.fn && $.fn.wickedpicker) {
+      $('.timepicker').wickedpicker(options);
+    } else {
+      console.warn('[UX DEBUG] wickedpicker plugin not available, skipping init');
     }
-  })
+  } catch(e) { console.warn('[UX DEBUG] wickedpicker init error', e); }
 
-  $('.testimonial-slider').owlCarousel({
-    loop:true,
-    margin:0,
-    smartSpeed: 800,
-    nav: false,
-    dots: true,
-    //autoplay: true,
-    responsiveClass:true,
-    responsive:{
-        0:{
-            items: 1
-        },
-        1000:{
-            items:1
+  try {
+    if ($.fn && $.fn.owlCarousel) {
+      $('.choose-car-slider').owlCarousel({
+        loop:true,
+        margin:30,
+        smartSpeed: 800,
+        nav: true,
+        dots: false,
+        navText: ["<i class='fa fa-chevron-left'></i>", "<i class='fa fa-chevron-right'></i>"],
+        responsiveClass:true,
+        responsive:{
+            0:{ items:1, nav:true },
+            768:{ items:2, nav:true },
+            1000:{ items:3, nav:true }
         }
-    }
-  })
+      });
+    } else console.warn('[UX DEBUG] owlCarousel not available: choose-car-slider skipped');
+  } catch(e) { console.warn('[UX DEBUG] choose-car-slider init error', e); }
 
-  $('.brand-slider').owlCarousel({
-    loop:true,
-    margin:30,
-    smartSpeed: 800,
-    nav: false,
-    dots: false,
-    //autoplay: true,
-    responsiveClass:true,
-    responsive:{
-        0:{
-            items: 1
-        },
-        575:{
-          items: 2
-        },
-        1000:{
-            items:3
-        }
+  try {
+    if ($.fn && $.fn.owlCarousel) {
+      $('.testimonial-slider').owlCarousel({
+        loop:true,
+        margin:0,
+        smartSpeed:800,
+        nav:false,
+        dots:true,
+        responsiveClass:true,
+        responsive:{0:{items:1},1000:{items:1}}
+      });
     }
-  })
+  } catch(e) { console.warn('[UX DEBUG] testimonial-slider init error', e); }
 
-  $('.choose-car-slider-two').owlCarousel({
-    loop:true,
-    margin:30,
-    smartSpeed: 800,
-    dots: false,
-    nav: true,
-    navText: ["<i class='fa fa-chevron-left'></i>", "<i class='fa fa-chevron-right'></i>"],
-    responsiveClass:true,
-    responsive:{
-        0:{
-            items: 1
-        },
-        768:{
-            items: 3
-        },
-        1000:{
-            items:4,
-            nav: true
-        }
+  try {
+    if ($.fn && $.fn.owlCarousel) {
+      $('.brand-slider').owlCarousel({
+        loop:true,
+        margin:30,
+        smartSpeed:800,
+        nav:false,
+        dots:false,
+        responsiveClass:true,
+        responsive:{0:{items:1},575:{items:2},1000:{items:3}}
+      });
     }
-  });
+  } catch(e) { console.warn('[UX DEBUG] brand-slider init error', e); }
+
+  try {
+    if ($.fn && $.fn.owlCarousel) {
+      $('.choose-car-slider-two').owlCarousel({
+        loop:true,
+        margin:30,
+        smartSpeed:800,
+        dots:false,
+        nav:true,
+        navText:["<i class='fa fa-chevron-left'></i>","<i class='fa fa-chevron-right'></i>"],
+        responsiveClass:true,
+        responsive:{0:{items:1},768:{items:3},1000:{items:4,nav:true}}
+      });
+    }
+  } catch(e) { console.warn('[UX DEBUG] choose-car-slider-two init error', e); }
 
   // Reservation form total calculation
   function parseDateYMD(s) {
     if (!s) return null;
-    // Accept ISO YYYY-MM-DD or DD/MM/YYYY
-    if (s.indexOf('-') !== -1) {
-      var parts = s.split('-');
-      if (parts.length !== 3) return null;
-      return new Date(parts[0], parts[1] - 1, parts[2]);
+    var v = String(s).trim();
+    // helper: collapse duplicated year sequences like 20262026 -> 2026
+    v = v.replace(/(\d{4})\1+/, '$1');
+    // Accept ISO YYYY-MM-DD
+    if (v.indexOf('-') !== -1) {
+      var p = v.split('-');
+      if (p.length === 3 && /^\d{4}$/.test(p[0]) && /^\d{1,2}$/.test(p[1]) && /^\d{1,2}$/.test(p[2])) {
+        return new Date(p[0], p[1] - 1, p[2]);
+      }
     }
-    if (s.indexOf('/') !== -1) {
-      var parts = s.split('/');
-      if (parts.length !== 3) return null;
-      // assume DD/MM/YYYY
-      return new Date(parts[2], parts[1] - 1, parts[0]);
+    // Accept DD/MM/YYYY or DD/Month/YYYY (month name english/pt)
+    if (v.indexOf('/') !== -1) {
+      var q = v.split('/');
+      if (q.length === 3) {
+        var dd = q[0], mm = q[1], yyyy = q[2];
+        // if month is numeric
+        if (/^\d{1,2}$/.test(mm) && /^\d{4}$/.test(yyyy) && /^\d{1,2}$/.test(dd)) {
+          return new Date(yyyy, mm - 1, dd);
+        }
+        // try map month names (English and Portuguese)
+        var monthMap = {
+          january:1, february:2, march:3, april:4, may:5, june:6, july:7, august:8, september:9, october:10, november:11, december:12,
+          jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12,
+          janeiro:1, fevereiro:2, marco:3, março:3, abril:4, maio:5, junho:6, julho:7, agosto:8, setembro:9, outubro:10, novembro:11, dezembro:12
+        };
+        var mmnorm = mm.toLowerCase().replace(/[^a-záàâãéèêíóôõúç]/g, '');
+        if (monthMap[mmnorm] && /^\d{4}$/.test(yyyy) && /^\d{1,2}$/.test(dd)) {
+          return new Date(yyyy, monthMap[mmnorm] - 1, dd);
+        }
+      }
     }
-    // fallback: try native Date parsing (handles formats like 'March 28, 2026')
-    var parsed = Date.parse(s);
-    if (!isNaN(parsed)) return new Date(parsed);
     return null;
+  }
+
+  // Normalize date input value to DD/MM/YYYY when possible (handles month names and duplicated years)
+  function normalizeDateInputValue(raw) {
+    if (!raw) return '';
+    var v = String(raw).trim();
+    // collapse duplicated year sequences e.g. 20262026
+    v = v.replace(/(\d{4})\1+/, '$1');
+    // if ISO -> convert
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(v)) {
+      var parts = v.split('-');
+      var disp = (parts[2].length===1?('0'+parts[2]):parts[2]) + '/' + (parts[1].length===1?('0'+parts[1]):parts[1]) + '/' + parts[0];
+      return disp;
+    }
+    // if already DD/MM/YYYY -> normalize zero padding
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v)) {
+      var a = v.split('/');
+      return (a[0].length===1?('0'+a[0]):a[0]) + '/' + (a[1].length===1?('0'+a[1]):a[1]) + '/' + a[2];
+    }
+    // try to parse DD/Month/YYYY (month name english/pt)
+    var m = v.match(/^(\d{1,2})[\/-]([A-Za-záàâãéèêíóôõúç]+)[\/-](\d{4})$/);
+    if (m) {
+      var dd = m[1], mname = m[2].toLowerCase(), yy = m[3];
+      var monthMap = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,janeiro:1,fevereiro:2,marco:3,março:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+      var mm = monthMap[mname.replace(/[^a-záàâãéèêíóôõúç]/g,'')];
+      if (mm) return (dd.length===1?('0'+dd):dd) + '/' + (mm<10?('0'+mm):mm) + '/' + yy;
+    }
+    return v;
   }
 
   function daysBetween(start, end) {
@@ -219,6 +356,8 @@
       days = daysBetween(sd, ed);
       if (!isFinite(days) || days < 0) days = 0;
     }
+    // debug: log parsed dates/rate/days
+    try { console.log('[UX DEBUG] updateReservationTotal', { dailyRate: dailyRate, startRaw: $('#startDate').val(), endRaw: $('#endDate').val(), startParsed: sd, endParsed: ed, days: days }); } catch(e) {}
     var extrasTotal = 0;
     form.find('.extra-checkbox:checked').each(function () {
       var p = parseFloat($(this).data('daily-price')) || 0;
@@ -233,6 +372,17 @@
 
   // Bind events
   $(document).on('change', '#startDate, #endDate', updateReservationTotal);
+  // Normalize date value on blur/change to prevent malformed strings (month names, dup years)
+  $(document).on('blur change', '.datepicker-here', function(){
+    try {
+      var v = $(this).val();
+      var nv = normalizeDateInputValue(v);
+      if (nv && nv !== v) {
+        $(this).val(nv);
+      }
+    } catch(e){}
+    try { updateReservationTotal(); } catch(e){}
+  });
   $(document).on('change', '.extra-checkbox', updateReservationTotal);
   // Ensure dates are submitted in ISO format: YYYY-MM-DD
   function formatToISO(s) {
@@ -251,17 +401,6 @@
   }
 
   $(document).on('submit', '.reserva-form', function(e){
-    // If user not logged, show login modal instead of submitting
-    if (!window.CURRENT_USER) {
-      e.preventDefault();
-      if (window.bootstrap && bootstrap.Modal) {
-        var lmodal = new bootstrap.Modal(document.getElementById('loginPromptModal'));
-        lmodal.show();
-      } else {
-        $('#loginPromptModal').modal('show');
-      }
-      return false;
-    }
     // validate dates before submit
     var sd_raw = $('#startDate').val();
     var ed_raw = $('#endDate').val();
@@ -291,6 +430,20 @@
     // allow submit to continue
   });
 
+  // Ensure totals are recalculated and any leftover modal backdrops removed just before submitting via the reserve button
+  $(document).on('click', '.reserva-form button[type="submit"]', function(e){
+    try {
+      updateReservationTotal();
+    } catch(err) {
+      console.warn('[UX DEBUG] updateReservationTotal error', err);
+    }
+    // small defensive cleanup in case a backdrop is stuck
+    setTimeout(function(){
+      try { $('.modal-backdrop').remove(); } catch(e){}
+      try { $('body').removeClass('modal-open'); } catch(e){}
+    }, 20);
+  });
+
   // Generic conversion for any form that contains startDate/endDate inputs (e.g., edit reservation)
   $(document).on('submit', 'form', function(e){
     var f = $(this);
@@ -310,21 +463,102 @@
   // Normalize initial date inputs (show DD/MM/YYYY if server rendered ISO) and then update totals
   function normalizeInitialDateInputs(){
     $('.datepicker-here').each(function(){
-      var v = $(this).val();
-      if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)){
-        // convert YYYY-MM-DD -> DD/MM/YYYY for display
-        var parts = v.split('-');
-        var disp = parts[2] + '/' + parts[1] + '/' + parts[0];
-        $(this).val(disp);
-        // store original ISO in data attribute
-        $(this).attr('data-iso-value', v);
-      }
+      try {
+        var v = $(this).val();
+        var nv = normalizeDateInputValue(v);
+        if (nv && nv !== v) $(this).val(nv);
+      } catch(e){}
     });
+  }
+
+  // Schedule short-lived polling to catch programmatic mutations from other plugins
+  function scheduleNormalize(el) {
+    var $el = $(el);
+    var attempts = 0;
+    var id = setInterval(function(){
+      attempts++;
+      try {
+        var v = $el.val();
+        var nv = normalizeDateInputValue(v);
+        if (nv && nv !== v) {
+          $el.val(nv);
+        }
+      } catch(e){}
+      if (attempts > 20) clearInterval(id); // ~2 seconds at 100ms
+    }, 100);
   }
 
   $(document).ready(function(){
     normalizeInitialDateInputs();
     updateReservationTotal();
+  });
+
+  // Ensure datepicker inputs initialize on focus if initialization was skipped earlier
+  $(document).on('focus', '.datepicker-here', function(){
+    var $el = $(this);
+    if ($el.data('datepicker-initialized')) return;
+    try {
+      if (window.jQuery && jQuery.datepicker) {
+        // try jQuery UI init (conservative)
+        $el.datepicker('destroy');
+        $el.datepicker({
+          dateFormat: 'dd/mm/yy',
+          minDate: 0,
+          appendTo: 'body',
+          prevText: '<',
+          nextText: '>',
+          changeMonth: true,
+          changeYear: true,
+          monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+          onSelect: function(dateText, inst) {
+            try {
+              var parts = dateText.split('/');
+              if (parts.length === 3) {
+                var dd = parts[0].length===1?('0'+parts[0]):parts[0];
+                var mm = parts[1].length===1?('0'+parts[1]):parts[1];
+                var yy = parts[2];
+                if (yy.length === 2) {
+                  var curYear = new Date().getFullYear();
+                  var prefix = String(curYear).slice(0,2);
+                  yy = prefix + yy;
+                }
+                $el.val(dd + '/' + mm + '/' + yy);
+                $el.trigger('change');
+              }
+            } catch(e){}
+            try { updateReservationTotal(); } catch(e){}
+            try { scheduleNormalize(this); } catch(e){}
+          }
+        });
+        $el.data('datepicker-initialized','jquery-ui');
+        try { $el.datepicker('refresh'); } catch(e){}
+      } else if ($.fn && $.fn.datepicker && $.fn.datepicker.language) {
+        // fallback to air-datepicker
+        $el.datepicker({
+          language: 'pt',
+          dateFormat: 'dd/MM/yyyy',
+          autoClose: true,
+          minDate: new Date(),
+          prevHtml: '<',
+          nextHtml: '>',
+          onSelect: function(fd, d, picker) {
+            try {
+              if (d instanceof Date && !isNaN(d)) {
+                var dd = (d.getDate()<10?('0'+d.getDate()):d.getDate());
+                var mm = ((d.getMonth()+1)<10?('0'+(d.getMonth()+1)):(d.getMonth()+1));
+                var yyyy = d.getFullYear();
+                $el.val(dd + '/' + mm + '/' + yyyy);
+              }
+            } catch(e) {}
+            try { updateReservationTotal(); } catch(e){}
+            try { scheduleNormalize(this); } catch(e){}
+          }
+        });
+        $el.data('datepicker-initialized','air');
+      }
+    } catch(e) {
+      console.warn('[UX DEBUG] focus datepicker init failed', e);
+    }
   });
 
   $('.blog-thumb-slider').owlCarousel({
@@ -345,6 +579,8 @@
         }
     }
   });
+
+    
 
   $( function() {
     $( "#slider-range" ).slider({
@@ -402,25 +638,66 @@
     var msg = $(this).data('confirm') || 'Tem a certeza?';
     $('#confirmModalMessage').text(msg);
     // support both bootstrap v5 and v4 APIs
-    if (window.bootstrap && bootstrap.Modal) {
+    if (false) { // Bootstrap 5 disabled, using Bootstrap 4 below
       var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+      console.log('[UX DEBUG] Showing confirmModal via bootstrap.Modal');
       modal.show();
     } else {
+      console.log('[UX DEBUG] Showing confirmModal via jQuery');
       $('#confirmModal').modal('show');
     }
   });
   $('#confirmModalOk').on('click', function() {
     if (pendingForm) {
-      pendingForm.submit();
+      try {
+        // call native submit to avoid re-triggering jQuery submit handlers
+        HTMLFormElement.prototype.submit.call(pendingForm);
+      } catch (e) {
+        try { pendingForm.submit(); } catch(e2){}
+      }
       pendingForm = null;
+      // small defensive cleanup: remove any leftover backdrops shortly after submit
+      setTimeout(function(){
+        try { $('.modal-backdrop').remove(); } catch(e){}
+        try { $('body').removeClass('modal-open'); } catch(e){}
+      }, 100);
     }
-    if (window.bootstrap && bootstrap.Modal) {
+    if (false) { // Bootstrap 5 disabled, using Bootstrap 4 below
       var modalEl = document.getElementById('confirmModal');
       var modal = bootstrap.Modal.getInstance(modalEl);
       if (modal) modal.hide();
     } else {
       $('#confirmModal').modal('hide');
     }
+  });
+
+  // Global debug hooks: log modal show/hide events and ensure no leftover backdrops remain
+  try {
+    $(document).on('shown.bs.modal', '.modal', function(e){
+      console.log('[UX DEBUG] modal shown:', e.target && e.target.id);
+    });
+    $(document).on('hidden.bs.modal', '.modal', function(e){
+      console.log('[UX DEBUG] modal hidden:', e.target && e.target.id);
+      // small delay then remove any stray backdrops
+      setTimeout(function(){
+        if ($('.modal.show').length === 0) {
+          try { $('.modal-backdrop').remove(); } catch(e){}
+          try { $('body').removeClass('modal-open'); } catch(e){}
+        }
+      }, 50);
+    });
+  } catch(e) {
+    // ignore if bootstrap/jQuery events not available
+  }
+
+  // Defensive cleanup after any form submission: ensure no leftover modal backdrop remains
+  $(document).on('submit', 'form', function(){
+    setTimeout(function(){
+      if ($('.modal.show').length === 0) {
+        try { $('.modal-backdrop').remove(); } catch(e){}
+        try { $('body').removeClass('modal-open'); } catch(e){}
+      }
+    }, 300);
   });
 
 

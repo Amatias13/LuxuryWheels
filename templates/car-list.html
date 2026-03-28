@@ -98,13 +98,17 @@
                       <span style="background:#e74c3c;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px;">Indisponível</span>
                       {% endif %}
                       <p>{{ v.type }} · {{ v.category }} · {{ v.capacity }} pessoas</p>
+                      {% if not v.available %}
+                      <button class="cmn-btn" type="button" disabled>Indisponível</button>
+                      {% else %}
                       <a class="cmn-btn" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">alugar carro</a>
+                      {% endif %}
                     </div>
                     <div class="car-item-meta">
                       <ul class="details-list">
-                        <li><i class="fa fa-car"></i>model</li>
-                        <li><i class="fa fa-tachometer"></i>KM</li>
-                        <li><i class="fa fa-sliders"></i>auto</li>
+                        <li><i class="fa fa-car"></i>{{ v.model or 'N/A' }}</li>
+                        <li><i class="fa fa-tachometer"></i>{{ v.get('km', 'N/A') }}</li>
+                        <li><i class="fa fa-sliders"></i>{{ v.type or 'N/A' }}</li>
                       </ul>
                     </div>
                   </div>
@@ -172,7 +176,7 @@
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-calendar"></i>
-                        <input class="form-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
+                        <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-clock-o"></i>
@@ -180,7 +184,7 @@
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-calendar"></i>
-                        <input class="form-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
+                        <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
                       </div>
                       <div class="form-group col-md-12">
                         <i class="fa fa-clock-o"></i>
@@ -236,27 +240,27 @@
     <!-- car-search-section end -->
     {% include 'partials/footer.html' %}
     <!-- jquery js link -->
-    <script src="assets/js/jquery-3.3.1.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
     <!-- jquery migrate js link -->
-    <script src="assets/js/jquery-migrate-3.0.0.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
     <!-- bootstrap js link -->
-    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
     <!-- lightcase js link -->
-    <script src="assets/js/lightcase.js"></script>
+    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
     <!-- wow js link -->
-    <script src="assets/js/wow.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
     <!-- nice select js link -->
-    <script src="assets/js/jquery.nice-select.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
     <!-- datepicker js link -->
-    <script src="assets/js/datepicker.min.js"></script>
-    <script src="assets/js/datepicker.en.js"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
     <!-- wickedpicker js link -->
-    <script src="assets/js/wickedpicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
     <!-- owl carousel js link -->
-    <script src="assets/js/owl.carousel.min.js"></script>
+    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
     <!-- jquery ui js link -->
-    <script src="assets/js/jquery-ui.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
     <!-- main js link -->
-    <script src="assets/js/main.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

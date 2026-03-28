@@ -14,19 +14,92 @@
           <ul class="navbar-nav main-menu m-auto">
             <li><a href="{{ url_for('home') }}">Início</a></li>
             <li><a href="{{ url_for('vehicles.list_view') }}">Carros</a></li>
-            {% if current_user %}
-              <li class="nav-item"><span class="nav-link">Olá {{ current_user.firstName }}</span></li>
-              <li><a href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
-              <li><a href="{{ url_for('users.logout') }}">Sair</a></li>
-            {% else %}
-              <li><a href="{{ url_for('users.login') }}">Iniciar sessão</a></li>
-              <li><a href="{{ url_for('users.register') }}">Registar-se</a></li>
-            {% endif %}
             <li><a href="{{ url_for('contact') }}">Contacte-nos</a></li>
+          </ul>
+          <ul class="navbar-nav ml-auto">
+            {% if is_logged_in %}
+              {% if current_user %}
+              <li class="nav-item"><span class="nav-link">Olá {{ current_user.firstName }}</span></li>
+              {% endif %}
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('reservations.my_reservations') }}">As minhas reservas</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('users.logout') }}">Sair</a></li>
+            {% else %}
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('users.login') }}">Iniciar sessão</a></li>
+              <li class="nav-item"><a class="nav-link" href="{{ url_for('users.register') }}">Registar-se</a></li>
+            {% endif %}
           </ul>
         </div>
       </nav>
     </div>
   </div>
   {% include 'partials/flash.html' %}
+
+  <!-- Modal for modal-style flash messages (e.g., logout) -->
+  <div class="modal fade" id="flashModal" tabindex="-1" role="dialog" aria-labelledby="flashModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="flashModalLabel">Notificação</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body" id="flashModalBody"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var el = document.getElementById('flash-modal-msg');
+      if (!el) return;
+      var raw = el.getAttribute('data-message') || '';
+      var type = el.getAttribute('data-type') || 'modal';
+      var msg = raw;
+      var redirect = null;
+      // support JSON encoded payload: {"msg":"...","redirect":"/path"}
+      try {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          msg = parsed.msg || msg;
+          redirect = parsed.redirect || null;
+        }
+      } catch (e) {
+        // not JSON, keep raw
+      }
+      var body = document.getElementById('flashModalBody');
+      if (body) body.textContent = msg || '';
+      // adjust styling for error
+      var header = document.getElementById('flashModalLabel');
+      if (type === 'modal-error' && header) {
+        header.textContent = 'Erro';
+        header.style.color = '#b71c1c';
+      }
+      try {
+        if (window.jQuery && jQuery('#flashModal').modal) {
+          console.log('[UX DEBUG] flash modal show:', type, msg);
+          jQuery('#flashModal').modal('show');
+          // auto-close only for non-error modals
+          if (type === 'modal') {
+            setTimeout(function(){
+              try { jQuery('#flashModal').modal('hide'); } catch(e){}
+            }, 4000);
+          }
+          // if redirect provided, navigate after modal hidden
+          jQuery('#flashModal').on('hidden.bs.modal', function(){
+            console.log('[UX DEBUG] flash modal hidden');
+            try { $('.modal-backdrop').remove(); } catch(e){}
+            try { $('body').removeClass('modal-open'); } catch(e){}
+            if (redirect) window.location = redirect;
+          });
+        }
+      } catch(e) {
+        console.warn('Could not show flash modal', e);
+        if (redirect) window.location = redirect;
+      }
+    })();
+  </script>
 </header>

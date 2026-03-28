@@ -69,10 +69,10 @@
                     <input id="email" name="email" placeholder="O seu email" type="email" required />
                   </div>
                   <div class="frm-group">
-                    <input id="password" name="password" placeholder="Password" type="password" required />
+                    <input id="password" name="password" placeholder="Palavra-passe" type="password" required />
                   </div>
                   <div class="frm-group">
-                    <input id="re_password" name="re_password" placeholder="Confirmar password" type="password" required />
+                    <input id="re_password" name="re_password" placeholder="Confirmar palavra-passe" type="password" required />
                   </div>
                   <div class="frm-group">
                     <input type="submit" value="criar nova conta" />
@@ -87,28 +87,28 @@
     <!-- registration-section end -->
     {% include 'partials/footer.html' %}
     <!-- jquery js link -->
-    <script src="assets/js/jquery-3.3.1.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
     <!-- jquery migrate js link -->
-    <script src="assets/js/jquery-migrate-3.0.0.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
     <!-- bootstrap js link -->
-    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
     <!-- lightcase js link -->
-    <script src="assets/js/lightcase.js"></script>
+    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
     <!-- wow js link -->
-    <script src="assets/js/wow.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
     <!-- nice select js link -->
-    <script src="assets/js/jquery.nice-select.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
     <!-- datepicker js link -->
-    <script src="assets/js/datepicker.min.js"></script>
-    <script src="assets/js/datepicker.en.js"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
     <!-- wickedpicker js link -->
-    <script src="assets/js/wickedpicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
     <!-- owl carousel js link -->
-    <script src="assets/js/owl.carousel.min.js"></script>
+    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
     <!-- jquery ui js link -->
-    <script src="assets/js/jquery-ui.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
     <!-- main js link -->
-    <script src="assets/js/main.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
       // client-side password confirmation
       (function(){
@@ -119,7 +119,7 @@
           var rp = document.getElementById('re_password').value;
           if (p !== rp) {
             e.preventDefault();
-            alert('As passwords não coincidem.');
+            alert('As palavras-passe não coincidem.');
             return false;
           }
         });

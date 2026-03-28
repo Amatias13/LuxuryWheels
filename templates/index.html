@@ -59,31 +59,31 @@
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-map-marker"></i>
-                    <input class="form-control has-icon" name="startLocation" placeholder="Pickup Location" type="text" />
+                    <input class="form-control has-icon" name="startLocation" placeholder="Local de levantamento" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-map-marker"></i>
-                    <input class="form-control has-icon" name="endLocation" placeholder="Drop Off Location" type="text" />
+                    <input class="form-control has-icon" name="endLocation" placeholder="Local de entrega" type="text" />
                   </div>
                 </div>
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-calendar"></i>
-                    <input class="form-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Pickup Date" type="text" />
+                    <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-clock-o"></i>
-                    <input class="form-control has-icon timepicker" name="startTime" placeholder="Pickup Time" type="text" />
+                    <input class="form-control has-icon timepicker" name="startTime" placeholder="Hora de levantamento" type="text" />
                   </div>
                 </div>
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-calendar"></i>
-                    <input class="form-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Drop Off Date" type="text" />
+                    <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-clock-o"></i>
-                    <input class="form-control has-icon timepicker" name="endTime" placeholder="Drop Off Time" type="text" />
+                    <input class="form-control has-icon timepicker" name="endTime" placeholder="Hora de entrega" type="text" />
                   </div>
                 </div>
                 <button class="cmn-btn btn-radius" type="submit">Reserva</button>
@@ -93,7 +93,7 @@
           <div class="col-lg-6">
             <div class="banner-content">
               <h1 class="title">encontre o seu carro</h1>
-              <p>Lorem ipsum dolor sit amet, congue placerat nec. Leo faubus sed eleifend bibendum neque vehiculanulla. Lorem ipsum dolor sit amet, congue placerat nec. Leo faubus sed eleifend bibendum neque vehiculanulla.</p>
+              <p>Encontre o veículo perfeito para a sua viagem — frota de luxo, serviço dedicado e condições flexíveis. Reserve online de forma rápida e segura.</p>
               <a class="cmn-btn" href="{{ url_for('vehicles.list_view') }}">ver todos os veículos</a>
             </div>
           </div>
@@ -164,7 +164,7 @@
           <div class="col-lg-6">
             <div class="section-header text-center">
               <h2 class="section-title">os nossos carros fantásticos estão aqui</h2>
-              <p>Augue urna molestie mi adipiscing vulputate pede sedmassa Praesquam massa, sodales velit turpis in tellu.</p>
+              <p>Frota diversificada e mantida com rigor — conforto, segurança e performance para todas as ocasiões.</p>
             </div>
           </div>
         </div>
@@ -173,17 +173,21 @@
           <div class="col-lg-6">
             <div class="car-item car-item--style2">
               <div class="thumb bg_img" data-background="{{ url_for('static', filename='images/cars/' ~ (v.imageUrl or 'v1.jpg')) }}"></div>
-              <div class="car-item-body">
+                  <div class="car-item-body">
                 <div class="content">
                   <h4 class="title">{{ v.model }}</h4>
-                  <span class="price">a partir de {{ v.dailyRate }}€ por dia</span>
-                  <p>Detalhes do carro.</p>
-                  <a class="cmn-btn" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">alugar carro</a>
+                      <span class="price">a partir de {{ v.dailyRate }}€ por dia</span>
+                      <p>Detalhes do carro.</p>
+                      {% if not v.available %}
+                      <button class="cmn-btn" type="button" disabled>Indisponível</button>
+                      {% else %}
+                      <a class="cmn-btn" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">alugar carro</a>
+                      {% endif %}
                 </div>
                 <div class="car-item-meta">
                   <ul class="details-list">
-                    <li><i class="fa fa-car"></i>model</li>
-                    <li><i class="fa fa-tachometer"></i>KM</li>
+                    <li><i class="fa fa-car"></i>{{ v.brand or '' }} {{ v.model or '' }}</li>
+                    <li><i class="fa fa-tachometer"></i>{{ v.get('km', 'N/A') }}</li>
                   </ul>
                 </div>
               </div>
@@ -199,28 +203,28 @@
     <!-- choose-car-section end -->
     {% include 'partials/footer.html' %}
     <!-- jquery js link -->
-    <script src="assets/js/jquery-3.3.1.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
     <!-- jquery migrate js link -->
-    <script src="assets/js/jquery-migrate-3.0.0.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
     <!-- bootstrap js link -->
-    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
     <!-- lightcase js link -->
-    <script src="assets/js/lightcase.js"></script>
+    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
     <!-- wow js link -->
-    <script src="assets/js/wow.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
     <!-- nice select js link -->
-    <script src="assets/js/jquery.nice-select.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
     <!-- datepicker js link -->
-    <script src="assets/js/datepicker.min.js"></script>
-    <script src="assets/js/datepicker.en.js"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
     <!-- wickedpicker js link -->
-    <script src="assets/js/wickedpicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
     <!-- owl carousel js link -->
-    <script src="assets/js/owl.carousel.min.js"></script>
+    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
     <!-- jquery ui js link -->
-    <script src="assets/js/jquery-ui.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
     <!-- main js link -->
-    <script src="assets/js/main.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
       // mirror slider max price if present on index
       $(function(){
