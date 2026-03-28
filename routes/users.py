@@ -31,7 +31,15 @@ def logout():
 def register():
     if request.method == "POST":
         try:
-            user = User.create(dict(request.form))
+            # Validate password confirmation
+            form = dict(request.form)
+            pw = form.get('password')
+            pw2 = form.get('re_password')
+            if not pw or not pw2 or pw != pw2:
+                raise ValueError('Passwords não coincidem')
+            # remove re_password before creating
+            form.pop('re_password', None)
+            user = User.create(form)
             db.session.add(user)
             db.session.commit()
             flash("Conta criada com sucesso, faca login")

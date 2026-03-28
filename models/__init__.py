@@ -13,6 +13,7 @@ _MODEL_MAP = {
     'Payment_Status': 'PaymentStatus',
     'Testimonial': 'Testimonial',
     'Reservation_Extra': 'ReservationExtra',
+    'Reservation_Extras_Link': 'ReservationExtrasLink',
 }
 
 __all__ = list(_MODEL_MAP.values())

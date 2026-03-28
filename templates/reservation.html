@@ -1,38 +1,25 @@
 <!doctype html>
-
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewpout" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <meta content="ie=edge" http-equiv="X-UA-Compatible" />
-    <title>Luxury Wheels - HTML Template</title>
-    <!-- site favicon -->
-    <link href="assets/images/favicon.jpg" rel="shoutcut icon" type="image/png" />
-    <!-- fontawesome css link -->
+    <title>Luxury Wheels - Reserva</title>
+    <link href="assets/images/favicon.jpg" rel="shortcut icon" type="image/png" />
     <link href="assets/css/fontawesome.min.css" rel="stylesheet" />
-    <!-- bootstrap css link -->
     <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- lightcase css link -->
     <link href="assets/css/lightcase.css" rel="stylesheet" />
-    <!-- animate css link -->
     <link href="assets/css/animate.css" rel="stylesheet" />
-    <!-- nice select css link -->
     <link href="assets/css/nice-select.css" rel="stylesheet" />
-    <!-- datepicker css link -->
     <link href="assets/css/datepicker.min.css" rel="stylesheet" />
-    <!-- wickedpicker css link -->
     <link href="assets/css/wickedpicker.min.css" rel="stylesheet" />
-    <!-- jquery ui css link -->
     <link href="assets/css/jquery-ui.min.css" rel="stylesheet" />
-    <!-- owl carousel css link -->
     <link href="assets/css/owl.carousel.min.css" rel="stylesheet" />
-    <!-- main style css link -->
     <link href="assets/css/main.css" rel="stylesheet" />
   </head>
   <body>
-    <!--  header-section start  -->
     {% include 'partials/navbar.html' %}
-    <!-- inner-apge-banner start -->
+
     <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
       <div class="container">
         <div class="row">
@@ -49,8 +36,7 @@
         </div>
       </div>
     </section>
-    <!-- inner-apge-banner end -->
-    <!-- reserva-section start -->
+
     <section class="reserva-section pt-120 pb-120">
       <div class="container">
         <div class="row">
@@ -62,19 +48,21 @@
               <div class="content">
                 <div class="content-block">
                   <h3 class="car-name">{{ vehicle.model if vehicle else 'Carro' }}</h3>
-                  <span class="price">Start from {{ vehicle.dailyRate if vehicle else 'N/A' }}$ per day</span>
+                  <span class="price">Start from {{ vehicle.dailyRate if vehicle else 'N/A' }}€ per day</span>
                   <p>{{ vehicle_desc or 'Detalhes do carro' }}</p>
                 </div>
-                <form class="reserva-foum" method="post" action="{{ url_for('reservations.reserve') }}">
-                  <input type="hidden" name="vehicle_id" value="{{ vehicle.id if vehicle else '' }}" />
+
+                <form class="reserva-form" method="post" action="{{ url_for('reservations.reserve') }}" data-daily-rate="{{ vehicle.dailyRate if vehicle else 0 }}">
+                  <input type="hidden" name="vehicle_id" value="{{ vehicle.idVehicle if vehicle else '' }}" />
+
                   <div class="content-block">
                     <h3 class="title">benefícios e taxas extra</h3>
                     <div class="row">
                       {% for e in extras %}
                       <div class="col-lg-6">
-                        <div class="foum-group foum-check">
-                          <input class="foum-check-input" id="extra_{{ e.id }}" type="checkbox" name="extras" value="{{ e.id }}" />
-                          <label class="foum-check-label" for="extra_{{ e.id }}">
+                        <div class="form-group form-check">
+                          <input class="form-check-input extra-checkbox" id="extra_{{ e.id }}" type="checkbox" name="extras" value="{{ e.id }}" data-daily-price="{{ e.dailyPrice }}" />
+                          <label class="form-check-label" for="extra_{{ e.id }}">
                             {{ e.name }}{% if e.dailyPrice > 0 %} — {{ e.dailyPrice }}€/dia{% endif %}
                           </label>
                         </div>
@@ -82,52 +70,53 @@
                       {% endfor %}
                     </div>
                   </div>
+
                   <div class="row">
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-map-marker"></i>
-                        <input class="foum-control has-icon" placeholder="Local de levantamento" type="text" />
-                      </div>
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-map-marker"></i>
-                        <input class="foum-control has-icon" placeholder="Local de entrega" type="text" />
-                      </div>
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-calendar"></i>
-                        <input class="foum-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
-                      </div>
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-clock-o"></i>
-                        <input class="foum-control has-icon timepicker" name="timepicker" placeholder="Hora de levantamento" type="text" />
-                      </div>
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-calendar"></i>
-                        <input class="foum-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
-                      </div>
-                      <div class="foum-group col-md-6">
-                        <i class="fa fa-clock-o"></i>
-                        <input class="foum-control has-icon timepicker" name="timepicker" placeholder="Hora de entrega" type="text" />
-                      </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-map-marker"></i>
+                      <input class="form-control has-icon" name="startLocation" placeholder="Local de levantamento" type="text" />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-map-marker"></i>
+                      <input class="form-control has-icon" name="endLocation" placeholder="Local de entrega" type="text" />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-calendar"></i>
+                      <input class="form-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-clock-o"></i>
+                      <input class="form-control has-icon timepicker" name="startTime" placeholder="Hora de levantamento" type="text" />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-calendar"></i>
+                      <input class="form-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Data de entrega" type="text" />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <i class="fa fa-clock-o"></i>
+                      <input class="form-control has-icon timepicker" name="endTime" placeholder="Hora de entrega" type="text" />
                     </div>
                   </div>
+
                   <div class="content-block">
-                    <h3 class="title">personal infoumation</h3>
+                    <h3 class="title">informação pessoal</h3>
                     <div class="row">
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <input name="name" placeholder="Nome" type="text" required />
                       </div>
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <input name="email" placeholder="Endereço de email" type="email" required />
                       </div>
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <input name="phone" placeholder="Telefone" type="tel" />
                       </div>
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <input name="city" placeholder="Cidade" type="text" />
                       </div>
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <input name="postal_code" placeholder="Código Postal" type="text" />
                       </div>
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <select name="gender">
                           <option>Género</option>
                           <option>Masculino</option>
@@ -136,10 +125,11 @@
                       </div>
                     </div>
                   </div>
+
                   <div class="content-block">
                     <h3 class="title">método de pagamento</h3>
                     <div class="row">
-                      <div class="col-lg-6 foum-group">
+                      <div class="col-lg-6 form-group">
                         <select name="idPaymentMethod">
                           <option value="">Selecionar método de pagamento</option>
                           {% for pm in payment_methods %}
@@ -149,34 +139,54 @@
                       </div>
                     </div>
                   </div>
+
                   <div class="content-block">
-                    <h3 class="title">addisonal infoumation</h3>
+                    <h3 class="title">informação adicional</h3>
                     <div class="row">
-                      <div class="col-lg-12 foum-group">
-                        <textarea name="notes" placeholder="Write addisonal infoumation in here"></textarea>
+                      <div class="col-lg-12 form-group">
+                        <textarea name="notes" class="form-control" placeholder="Write additional information here"></textarea>
                       </div>
                       <div class="col-lg-12">
+                        <div style="margin-bottom:14px;color:#666;font-size:14px;">Total estimado: <strong id="reservation-total_inline">0.00</strong>€</div>
                         <button class="cmn-btn bg-black" type="reset">Cancelar</button>
+                        {% if vehicle and not vehicle.is_available() %}
+                        <button class="cmn-btn" type="button" disabled>Indisponível</button>
+                        <div class="text-danger mt-2">Veículo indisponível para as datas selecionadas.</div>
+                        {% else %}
                         <button class="cmn-btn" type="submit">reserva</button>
+                        {% endif %}
                       </div>
                     </div>
                   </div>
+
                 </form>
+
               </div>
             </div>
           </div>
+
           <div class="col-lg-4">
             <aside class="sidebar">
-              <div class="widget widget-all-cars">
-                <h4 class="widget-title">todos os nossos carros</h4>
-                {% for v in vehicles %}
-                  <li><a href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">{{ v.model }}</a></li>
-                  {% endfor %}
+              <div class="widget" style="border:1px solid #eee;padding:18px;border-radius:8px;">
+                <h4 class="widget-title">Resumo da reserva</h4>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div>
+                    <strong>{{ vehicle.brand.name if vehicle and vehicle.brand else '' }} {{ vehicle.model if vehicle else 'Veículo' }}</strong>
+                    <div style="color:#666;font-size:13px;">{{ vehicle_desc or '' }}</div>
+                  </div>
+                  <div style="border-top:1px dashed #eee;padding-top:10px;">
+                    <div>Diária: <strong>{{ vehicle.dailyRate if vehicle else '0' }}€/dia</strong></div>
+                    <div>Dias: <strong id="reservation-days">0</strong></div>
+                    <div style="font-size:18px;margin-top:8px;">Total estimado: <span id="reservation-total" style="font-size:20px;font-weight:700;color:#c82333;">0.00</span>€</div>
+                  </div>
+                  <a class="cmn-btn" href="{{ url_for('vehicles.list_view') }}">Ver mais carros</a>
+                </div>
               </div>
-              <div class="widget widget-testemunho">
+
+              <div class="widget widget-testemunho mt-20">
                 <h4 class="widget-title">testemunho</h4>
                 <div class="widget-body">
-                  <div class="testemunho-slider owl-carousel">
+                  <div class="testimonial-slider owl-carousel">
                     {% for t in testimonials %}
                     <div class="testemunho-item">
                       <div class="testemunho-item--header">
@@ -199,36 +209,32 @@
                 </div>
               </div>
             </aside>
-              <!-- widget end -->
-            </aside>
           </div>
         </div>
       </div>
     </section>
-    <!-- reserva-section end -->
+
     {% include 'partials/footer.html' %}
-    <!-- jquery js link -->
+
+    <script>
+      // expose current user id to JS (null if not logged)
+      (function(){
+        var val = document.body.getAttribute('data-current-user') || '';
+        window.CURRENT_USER = val === '' ? null : Number(val);
+      })();
+    </script>
+
     <script src="assets/js/jquery-3.3.1.min.js"></script>
-    <!-- jquery migrate js link -->
     <script src="assets/js/jquery-migrate-3.0.0.js"></script>
-    <!-- bootstrap js link -->
     <script src="assets/js/bootstrap.min.js"></script>
-    <!-- lightcase js link -->
     <script src="assets/js/lightcase.js"></script>
-    <!-- wow js link -->
     <script src="assets/js/wow.min.js"></script>
-    <!-- nice select js link -->
     <script src="assets/js/jquery.nice-select.min.js"></script>
-    <!-- datepicker js link -->
     <script src="assets/js/datepicker.min.js"></script>
     <script src="assets/js/datepicker.en.js"></script>
-    <!-- wickedpicker js link -->
     <script src="assets/js/wickedpicker.min.js"></script>
-    <!-- owl carousel js link -->
     <script src="assets/js/owl.carousel.min.js"></script>
-    <!-- jquery ui js link -->
     <script src="assets/js/jquery-ui.min.js"></script>
-    <!-- main js link -->
     <script src="assets/js/main.js"></script>
   </body>
 </html>

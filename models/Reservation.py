@@ -19,8 +19,8 @@ class Reservation(db.Model):
         nullable=False,
         default=1,
     )
-    createdAt = db.Column(db.DateTime)
-    updatedAt = db.Column(db.DateTime)
+    createdAt = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updatedAt = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def to_dict(self):
         return {
@@ -35,7 +35,7 @@ class Reservation(db.Model):
         }
 
     @classmethod
-    def create(cls, data):
+    def create(cls, data, extras=None):
         """Cria uma reserva calculando totalDays e totalPrice.
         Valida disponibilidade e marca o veiculo como inativo (T4).
         """
@@ -43,8 +43,18 @@ class Reservation(db.Model):
         from models.Payment import Payment
         from models.Payment_Status import PaymentStatus
 
-        sd = datetime.strptime(data["startDate"], "%Y-%m-%d").date()
-        ed = datetime.strptime(data["endDate"], "%Y-%m-%d").date()
+        # aceitar formatos comuns: ISO YYYY-MM-DD ou DD/MM/YYYY (UI pode enviar local format)
+        def parse_date(s):
+            from datetime import datetime
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(s, fmt).date()
+                except Exception:
+                    continue
+            raise ValueError("Formato de data inválido")
+
+        sd = parse_date(data["startDate"])
+        ed = parse_date(data["endDate"])
 
         if ed <= sd:
             raise ValueError("A data de fim deve ser posterior à data de início")
@@ -54,12 +64,31 @@ class Reservation(db.Model):
         vehicle = Vehicle.query.get(data["idVehicle"])
         if not vehicle:
             raise ValueError("Veículo não encontrado")
-        if not vehicle.is_available():
-            raise ValueError("Veículo não disponível para reserva")
+
+        # Verificar disponibilidade no intervalo solicitado
+        if not vehicle.is_available(sd, ed):
+            raise ValueError("Veículo não disponível para o intervalo solicitado")
 
         total_price = total_days * vehicle.dailyRate
 
-        # T4: marcar veiculo como inativo
+        # Incluir extras (dailyPrice) se fornecidos: cada extra é cobrada por dia
+        extras_total = 0.0
+        if extras:
+            from models.Reservation_Extra import ReservationExtra
+
+            # extras pode ser lista de ids (int) ou strings
+            for ex_id in extras:
+                try:
+                    ex_id_int = int(ex_id)
+                except (TypeError, ValueError):
+                    continue
+                extra_obj = ReservationExtra.query.get(ex_id_int)
+                if extra_obj:
+                    extras_total += extra_obj.dailyPrice * total_days
+
+        total_price += extras_total
+
+        # T4: marcar veiculo como inativo (mantemos para compatibilidade com fluxo atual)
         vehicle.isActive = 0
 
         reservation = cls(
@@ -88,6 +117,12 @@ class Reservation(db.Model):
         if reservation.idReservationStatus == 3:
             raise ValueError("Reserva já cancelada")
 
+        # Regra: não permitir cancelamento com menos de 24 horas para o início
+        from datetime import date
+        today = date.today()
+        if reservation.startDate and (reservation.startDate - today).days < 1:
+            raise ValueError("Cancelamento não permitido nas 24 horas anteriores ao início da reserva")
+
         # Recolocar veiculo disponivel
         vehicle = Vehicle.query.get(reservation.idVehicle)
         if vehicle:
@@ -111,13 +146,34 @@ class Reservation(db.Model):
         if reservation.idReservationStatus == 3:
             raise ValueError("Não é possível alterar uma reserva cancelada")
 
-        sd = datetime.strptime(start_date, "%Y-%m-%d").date()
-        ed = datetime.strptime(end_date, "%Y-%m-%d").date()
+        # aceitar formatos YYYY-MM-DD ou DD/MM/YYYY
+        def parse_date(s):
+            from datetime import datetime
+            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+                try:
+                    return datetime.strptime(s, fmt).date()
+                except Exception:
+                    continue
+            raise ValueError("Formato de data inválido")
+
+        sd = parse_date(start_date)
+        ed = parse_date(end_date)
 
         if ed <= sd:
             raise ValueError("A data de fim deve ser posterior à data de início")
 
+        # Regra: não permitir alterações com menos de 24 horas para o início atual
+        from datetime import date
+        today = date.today()
+        if reservation.startDate and (reservation.startDate - today).days < 1:
+            raise ValueError("Alterações não permitidas nas 24 horas anteriores ao início da reserva")
+
         vehicle = Vehicle.query.get(reservation.idVehicle)
+
+        # Verificar disponibilidade no novo intervalo, ignorando a própria reserva
+        if not vehicle.is_available(sd, ed, exclude_reservation_id=reservation_id):
+            raise ValueError("Veículo não disponível para o novo intervalo solicitado")
+
         total_days = (ed - sd).days
         reservation.startDate = sd
         reservation.endDate = ed

@@ -19,14 +19,14 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
         query = model.query
 
         # T5: excluir veiculos com revisao vencida ou legalizacao > 1 ano
-        if hasattr(model, 'nextRevisionDate'):
+        """ if hasattr(model, 'nextRevisionDate'):
             today = date.today()
             one_year_ago = today - timedelta(days=365)
             query = query.filter(
                 model.nextRevisionDate >= today,
                 model.lastLegalizationDate >= one_year_ago,
                 model.isActive == 1,
-            )
+            ) """
 
         # Filtros de pesquisa
         if search and hasattr(model, 'model'):
@@ -60,6 +60,8 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             'search': search,
             'type_filter': type_filter,
             'category_filter': category_filter,
+            'max_price': max_price,
+            'capacity_filter': capacity_filter,
         }
 
         if extra_models:

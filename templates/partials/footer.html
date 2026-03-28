@@ -30,3 +30,40 @@
     </div>
   </div>
 </footer>
+<!-- Generic confirmation modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmModalMessage">Tem a certeza?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmModalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Login prompt modal -->
+    <div class="modal fade" id="loginPromptModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Iniciar Sessão</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>É necessário iniciar sessão para efetuar a reserva. Deseja iniciar sessão agora?</p>
+          </div>
+          <div class="modal-footer">
+            <a href="{{ url_for('users.login') }}" class="btn btn-primary">Ir para Iniciar Sessão</a>
+            <a href="{{ url_for('users.register') }}" class="btn btn-secondary">Registar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>

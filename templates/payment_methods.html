@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestão de Formas de Pagamento</title>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    {% include 'partials/navbar.html' %}
+    <div class="container mt-4">
+      <h3>Formas de Pagamento</h3>
+      <form method="post">
+        <div class="mb-3">
+          <label for="methodName" class="form-label">Nome do método</label>
+          <input id="methodName" name="methodName" class="form-control" required />
+        </div>
+        <button class="btn btn-primary" type="submit">Adicionar</button>
+      </form>
+
+      <hr />
+      <ul class="list-group mt-3">
+        {% for m in methods %}
+        <li class="list-group-item d-flex align-items-center justify-content-between">
+          <div class="flex-grow-1">
+            <form class="d-flex" method="post" action="{{ url_for('payment_methods.update_payment_method', pm_id=m.id) }}">
+              <input name="methodName" value="{{ m.methodName }}" class="form-control form-control-sm me-2" required />
+              <button class="btn btn-sm btn-outline-primary" type="submit">Alterar</button>
+            </form>
+          </div>
+          <div class="ms-3">
+            <form method="post" action="{{ url_for('payment_methods.delete_payment_method', pm_id=m.id) }}" onsubmit="return confirm('Eliminar método?');">
+              <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+            </form>
+          </div>
+        </li>
+        {% else %}
+        <li class="list-group-item">Nenhum método configurado.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </body>
+</html>

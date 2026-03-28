@@ -50,23 +50,58 @@ def reserve():
         flash('Faca login para fazer uma reserva', 'error')
         return redirect(url_for('users.login'))
     try:
+        vehicle_id_str = request.form.get('vehicle_id')
+        if not vehicle_id_str:
+            raise ValueError('Veículo inválido')
+
+        try:
+            vehicle_id = int(vehicle_id_str)
+        except (TypeError, ValueError):
+            raise ValueError('Veículo inválido')
+
         data = {
             'idUser': session['user_id'],
-            'idVehicle': int(request.form.get('vehicle_id')),
+            'idVehicle': vehicle_id,
             'startDate': request.form.get('startDate'),
             'endDate': request.form.get('endDate'),
         }
         payment_method_id = request.form.get('idPaymentMethod')
+        # ler extras selecionados (lista)
+        extras_selected = request.form.getlist('extras')
 
         if not data['startDate'] or not data['endDate']:
             raise ValueError('Datas de início e fim são obrigatórias')
         if not payment_method_id:
             raise ValueError('Selecione um método de pagamento')
 
-        # Criar reserva (marca veiculo como inativo - T4)
-        reservation, vehicle, total_price = Reservation.create(data)
+        # Criar reserva (inclui extras; marca veiculo como inativo - T4)
+        reservation, vehicle, total_price = Reservation.create(data, extras=extras_selected)
         db.session.add(reservation)
         db.session.flush()  # obter o id da reserva antes do commit
+
+        # Persistir extras selecionados (ligação reserva <-> extra)
+        from models.Reservation_Extras_Link import ReservationExtrasLink
+        from models.Reservation_Extra import ReservationExtra
+
+        for ex_id in extras_selected:
+            try:
+                ex_id_int = int(ex_id)
+            except (TypeError, ValueError):
+                continue
+            ex_obj = ReservationExtra.query.get(ex_id_int)
+            if ex_obj:
+                # calcular dias a partir da reserva criada
+                try:
+                    total_days = (reservation.endDate - reservation.startDate).days
+                except Exception:
+                    total_days = 0
+                link = ReservationExtrasLink(
+                    idReservation=reservation.idReservation,
+                    idExtra=ex_obj.idExtra,
+                    dailyPrice=ex_obj.dailyPrice,
+                    totalPrice=(ex_obj.dailyPrice * total_days),
+                )
+                db.session.add(link)
 
         # Criar pagamento
         payment, reservation = Payment.create(reservation.idReservation, payment_method_id, total_price)

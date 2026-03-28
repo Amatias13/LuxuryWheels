@@ -12,7 +12,7 @@ class Payment(db.Model):
         db.Integer, db.ForeignKey("Payment_Method.idPaymentMethod"), nullable=False
     )
     amount = db.Column(db.Float, nullable=False)
-    paymentDate = db.Column(db.DateTime, default=datetime.utcnow)
+    paymentDate = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     idPaymentStatus = db.Column(
         db.Integer,
         db.ForeignKey("Payment_Status.idPaymentStatus"),

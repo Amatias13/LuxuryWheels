@@ -108,5 +108,21 @@
     <script src="assets/js/jquery-ui.min.js"></script>
     <!-- main js link -->
     <script src="assets/js/main.js"></script>
+    <script>
+      // client-side password confirmation
+      (function(){
+        var form = document.querySelector('.registration-form');
+        if (!form) return;
+        form.addEventListener('submit', function(e){
+          var p = document.getElementById('password').value;
+          var rp = document.getElementById('re_password').value;
+          if (p !== rp) {
+            e.preventDefault();
+            alert('As passwords não coincidem.');
+            return false;
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -68,7 +68,26 @@
   $('select').niceSelect();
 
   // Access instance of plugin
-  $('.datepicker-here').data('datepicker')
+  // Initialize datepicker properly (accepts dd/mm/yyyy in UI but submits ISO)
+  try {
+    $('.datepicker-here').each(function() {
+      // air-datepicker initialization
+      $(this).datepicker({
+        language: 'en',
+        dateFormat: 'dd/MM/yyyy',
+        autoClose: true,
+        onSelect: function(fd, d, picker) {
+          // ensure total updates when user selects date
+          updateReservationTotal();
+        }
+      });
+    });
+    // ensure the popup is on top
+    $('.air-datepicker').css('z-index', 99999);
+  } catch (e) {
+    // ignore if plugin not available
+    console.warn('datepicker init failed', e);
+  }
 
 
   var options = {
@@ -163,6 +182,128 @@
     }
   });
 
+  // Reservation form total calculation
+  function parseDateYMD(s) {
+    if (!s) return null;
+    // Accept ISO YYYY-MM-DD or DD/MM/YYYY
+    if (s.indexOf('-') !== -1) {
+      var parts = s.split('-');
+      if (parts.length !== 3) return null;
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    if (s.indexOf('/') !== -1) {
+      var parts = s.split('/');
+      if (parts.length !== 3) return null;
+      // assume DD/MM/YYYY
+      return new Date(parts[2], parts[1] - 1, parts[0]);
+    }
+    // fallback: try native Date parsing (handles formats like 'March 28, 2026')
+    var parsed = Date.parse(s);
+    if (!isNaN(parsed)) return new Date(parsed);
+    return null;
+  }
+
+  function daysBetween(start, end) {
+    var msPerDay = 24 * 60 * 60 * 1000;
+    return Math.max(0, Math.ceil((end - start) / msPerDay));
+  }
+
+  function updateReservationTotal() {
+    var form = $('.reserva-form');
+    if (!form.length) return;
+    var dailyRate = parseFloat(form.data('daily-rate')) || 0;
+    var sd = parseDateYMD($('#startDate').val());
+    var ed = parseDateYMD($('#endDate').val());
+    var days = 0;
+    if (sd && ed) {
+      days = daysBetween(sd, ed);
+    }
+    var extrasTotal = 0;
+    form.find('.extra-checkbox:checked').each(function () {
+      var p = parseFloat($(this).data('daily-price')) || 0;
+      extrasTotal += p * days;
+    });
+    var total = (dailyRate * days) + extrasTotal;
+    $('#reservation-total').text(total.toFixed(2));
+    $('#reservation-total_inline').text(total.toFixed(2));
+    $('#reservation-days').text(days);
+  }
+
+  // Bind events
+  $(document).on('change', '#startDate, #endDate', updateReservationTotal);
+  $(document).on('change', '.extra-checkbox', updateReservationTotal);
+  // Ensure dates are submitted in ISO format: YYYY-MM-DD
+  function formatToISO(s) {
+    if (!s) return '';
+    if (s.indexOf('-') !== -1) {
+      // assume already ISO
+      return s;
+    }
+    if (s.indexOf('/') !== -1) {
+      var parts = s.split('/');
+      if (parts.length !== 3) return s;
+      // DD/MM/YYYY -> YYYY-MM-DD
+      return parts[2] + '-' + (parts[1].length===1?('0'+parts[1]):parts[1]) + '-' + (parts[0].length===1?('0'+parts[0]):parts[0]);
+    }
+    return s;
+  }
+
+  $(document).on('submit', '.reserva-form', function(e){
+    // If user not logged, show login modal instead of submitting
+    if (!window.CURRENT_USER) {
+      e.preventDefault();
+      if (window.bootstrap && bootstrap.Modal) {
+        var lmodal = new bootstrap.Modal(document.getElementById('loginPromptModal'));
+        lmodal.show();
+      } else {
+        $('#loginPromptModal').modal('show');
+      }
+      return false;
+    }
+    // convert date inputs to ISO before submit to avoid backend ambiguity
+    var sd = $('#startDate').val();
+    var ed = $('#endDate').val();
+    $('#startDate').val(formatToISO(sd));
+    $('#endDate').val(formatToISO(ed));
+    // allow submit to continue
+  });
+
+  // Generic conversion for any form that contains startDate/endDate inputs (e.g., edit reservation)
+  $(document).on('submit', 'form', function(e){
+    var f = $(this);
+    if (f.find('input[name="startDate"], input[name="endDate"]').length) {
+      f.find('input[name="startDate"]').each(function(){
+        var v = $(this).val();
+        $(this).val(formatToISO(v));
+      });
+      f.find('input[name="endDate"]').each(function(){
+        var v = $(this).val();
+        $(this).val(formatToISO(v));
+      });
+    }
+    // continue submit
+  });
+  // Initialize on page load
+  // Normalize initial date inputs (show DD/MM/YYYY if server rendered ISO) and then update totals
+  function normalizeInitialDateInputs(){
+    $('.datepicker-here').each(function(){
+      var v = $(this).val();
+      if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)){
+        // convert YYYY-MM-DD -> DD/MM/YYYY for display
+        var parts = v.split('-');
+        var disp = parts[2] + '/' + parts[1] + '/' + parts[0];
+        $(this).val(disp);
+        // store original ISO in data attribute
+        $(this).attr('data-iso-value', v);
+      }
+    });
+  }
+
+  $(document).ready(function(){
+    normalizeInitialDateInputs();
+    updateReservationTotal();
+  });
+
   $('.blog-thumb-slider').owlCarousel({
     loop:true,
     margin:0,
@@ -190,10 +331,13 @@
       values: [ 80, 300 ],
       slide: function( event, ui ) {
         $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+        // update hidden max_price field for search
+        $("#max_price").val(ui.values[1]);
       }
     });
     $( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
       " - $" + $( "#slider-range" ).slider( "values", 1 ) );
+    $("#max_price").val($( "#slider-range" ).slider( "values", 1 ));
   } );
 
   // service grid and list view
@@ -226,6 +370,35 @@
 
   // lightcase plugin init
   $('a[data-rel^=lightcase]').lightcase();
+
+  // Intercept forms with .confirm-form to show a Bootstrap modal instead of native confirm()
+  var pendingForm = null;
+  $(document).on('submit', '.confirm-form', function(e) {
+    e.preventDefault();
+    pendingForm = this;
+    var msg = $(this).data('confirm') || 'Tem a certeza?';
+    $('#confirmModalMessage').text(msg);
+    // support both bootstrap v5 and v4 APIs
+    if (window.bootstrap && bootstrap.Modal) {
+      var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+      modal.show();
+    } else {
+      $('#confirmModal').modal('show');
+    }
+  });
+  $('#confirmModalOk').on('click', function() {
+    if (pendingForm) {
+      pendingForm.submit();
+      pendingForm = null;
+    }
+    if (window.bootstrap && bootstrap.Modal) {
+      var modalEl = document.getElementById('confirmModal');
+      var modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+    } else {
+      $('#confirmModal').modal('hide');
+    }
+  });
 
 
 })(jQuery);

@@ -16,9 +16,11 @@ with app.app_context():
 
 from routes.users import bp as users_bp
 from routes.reservations import bp as reservations_bp
+from routes.payment_methods import bp as payment_methods_bp
 
 app.register_blueprint(users_bp)
 app.register_blueprint(reservations_bp)
+app.register_blueprint(payment_methods_bp)
 
 from routes.generic_views import make_list_blueprint
 from models import Vehicle, VehicleType, VehicleCategory, VehicleBrand, Testimonial
@@ -47,7 +49,7 @@ register_generic_models(app, model_classes, prefix="/api")
 
 @app.route("/")
 def home():
-    featured = [v.to_dict() for v in Vehicle.query.limit(4).all()]
+    featured = [v.to_dict() for v in Vehicle.query.all()]
     types = [t.to_dict() for t in VehicleType.query.all()]
     testimonials = [t.to_dict() for t in Testimonial.query.filter_by(isActive=1).all()]
     return render_template(

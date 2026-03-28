@@ -57,9 +57,8 @@
     <section class="pt-120 pb-120">
       <div class="container">
         <!-- flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
-        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} mb-30">{{ message }}</div>
-        {% endfor %} {% endif %} {% endwith %} {% if reservations %}
+        {% include 'partials/flash.html' %}
+        {% if reservations %}
         <div class="row">
           {% for r in reservations %}
           <div class="col-lg-6 mb-30">
@@ -78,10 +77,8 @@
                 <div style="display:flex;gap:10px;margin-top:12px;">
                   <a class="cmn-btn" href="{{ url_for('reservations.edit_reservation', rid=r.id) }}"
                      style="padding:8px 16px;font-size:13px;">Editar datas</a>
-                  <form method="post" action="{{ url_for('reservations.cancel_reservation', rid=r.id) }}"
-                        onsubmit="return confirm('Cancelar esta reserva?')">
-                    <button type="submit" class="cmn-btn bg-black"
-                            style="padding:8px 16px;font-size:13px;">Cancelar</button>
+                  <form method="post" action="{{ url_for('reservations.cancel_reservation', rid=r.id) }}" class="confirm-form" data-confirm="Cancelar esta reserva?">
+                    <button type="submit" class="cmn-btn bg-black" style="padding:8px 16px;font-size:13px;">Cancelar</button>
                   </form>
                 </div>
                 {% endif %}

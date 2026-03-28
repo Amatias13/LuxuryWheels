@@ -39,13 +39,19 @@
           <div class="col-lg-5">
             <div class="car-search-area mt-0">
               <h3 class="title">Procure o Seu Carro</h3>
-              <form class="car-search-form">
+              <form class="car-search-form" method="GET" action="{{ url_for('vehicles.list_view') }}">
+                <!-- preserve filters when submitting from homepage -->
+                <input type="hidden" name="car_search" value="{{ request.args.get('car_search','') }}" />
+                <input type="hidden" name="type_filter" value="{{ request.args.get('type_filter','') }}" />
+                <input type="hidden" name="category_filter" value="{{ request.args.get('category_filter','') }}" />
+                <input type="hidden" name="max_price" value="{{ request.args.get('max_price','') }}" id="index_max_price" />
+                <input type="hidden" name="capacity_filter" value="{{ request.args.get('capacity_filter','') }}" />
                 <div class="row">
                   <div class="col-xl-12 form-group">
                     <select name="type_filter">
                       <option value="">Escolha o Tipo de Carro</option>
                       {% for t in types %}
-                      <option value="{{ t.id }}">{{ t.name }}</option>
+                      <option value="{{ t.id }}" {% if request.args.get('type_filter', type=int) == t.id %}selected{% endif %}>{{ t.name }}</option>
                       {% endfor %}
                     </select>
                   </div>
@@ -53,31 +59,31 @@
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-map-marker"></i>
-                    <input class="form-control has-icon" placeholder="Pickup Location" type="text" />
+                    <input class="form-control has-icon" name="startLocation" placeholder="Pickup Location" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-map-marker"></i>
-                    <input class="form-control has-icon" placeholder="Drop Off Location" type="text" />
+                    <input class="form-control has-icon" name="endLocation" placeholder="Drop Off Location" type="text" />
                   </div>
                 </div>
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-calendar"></i>
-                    <input class="form-control has-icon datepicker-here" data-language="en" placeholder="Pickup Date" type="text" />
+                    <input class="form-control has-icon datepicker-here" data-language="en" name="startDate" id="startDate" placeholder="Pickup Date" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-clock-o"></i>
-                    <input class="form-control has-icon timepicker" name="timepicker" placeholder="Pickup Time" type="text" />
+                    <input class="form-control has-icon timepicker" name="startTime" placeholder="Pickup Time" type="text" />
                   </div>
                 </div>
                 <div class="row">
                   <div class="form-group col-xl-6">
                     <i class="fa fa-calendar"></i>
-                    <input class="form-control has-icon datepicker-here" data-language="en" placeholder="Drop Off Date" type="text" />
+                    <input class="form-control has-icon datepicker-here" data-language="en" name="endDate" id="endDate" placeholder="Drop Off Date" type="text" />
                   </div>
                   <div class="form-group col-xl-6">
                     <i class="fa fa-clock-o"></i>
-                    <input class="form-control has-icon timepicker" name="timepicker" placeholder="Drop Off Time" type="text" />
+                    <input class="form-control has-icon timepicker" name="endTime" placeholder="Drop Off Time" type="text" />
                   </div>
                 </div>
                 <button class="cmn-btn btn-radius" type="submit">Reserva</button>
@@ -170,9 +176,9 @@
               <div class="car-item-body">
                 <div class="content">
                   <h4 class="title">{{ v.model }}</h4>
-                  <span class="price">a partir de {{ v.dailyRate }}$ por dia</span>
+                  <span class="price">a partir de {{ v.dailyRate }}€ por dia</span>
                   <p>Detalhes do carro.</p>
-                  <a class="cmn-btn" href="{{ url_for('reservations.reserve') }}?vehicle_id={{ v.id }}">alugar carro</a>
+                  <a class="cmn-btn" href="{{ url_for('reservations.reservation') }}?vehicle_id={{ v.id }}">alugar carro</a>
                 </div>
                 <div class="car-item-meta">
                   <ul class="details-list">
@@ -215,5 +221,14 @@
     <script src="assets/js/jquery-ui.min.js"></script>
     <!-- main js link -->
     <script src="assets/js/main.js"></script>
+    <script>
+      // mirror slider max price if present on index
+      $(function(){
+        var max = $('#index_max_price').val();
+        if(max && $('#max_price').length) {
+          $('#max_price').val(max);
+        }
+      });
+    </script>
   </body>
 </html>

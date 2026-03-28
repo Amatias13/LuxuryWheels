@@ -10,8 +10,8 @@ class User(db.Model):
     email = db.Column(db.String, nullable=False, unique=True)
     passwordHash = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
-    createdAt = db.Column(db.DateTime)
-    updatedAt = db.Column(db.DateTime)
+    createdAt = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    updatedAt = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     def to_dict(self):
         return {
