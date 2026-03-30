@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import logging
 from database import db
 from models import (
     Reservation,
@@ -8,6 +9,7 @@ from models import (
     Testimonial,
     Payment,
 )
+from models.Status import ReservationStates
 
 bp = Blueprint("reservations", __name__)
 
@@ -27,7 +29,8 @@ def reservation():
 
             start_date = date.fromisoformat(start_raw)
             end_date = date.fromisoformat(end_raw)
-        except Exception:
+        except (ValueError, TypeError) as e:
+            logging.debug("Invalid date filter provided: %s", e)
             start_date = None
             end_date = None
     # Se foi fornecido um id mas não existe veículo correspondente
@@ -40,8 +43,9 @@ def reservation():
             if not vehicle.is_available(start_date, end_date):
                 flash("Veículo indisponível.", "modal-error")
                 return redirect(url_for("vehicles.list_view"))
-        except Exception:
+        except Exception as e:
             # if availability check errors, be conservative and block
+            logging.exception("Error checking vehicle availability")
             flash("Veículo indisponível.", "modal-error")
             return redirect(url_for("vehicles.list_view"))
     # Disponibilidade do veículo (para controlar botão no template)
@@ -49,7 +53,8 @@ def reservation():
     if vehicle:
         try:
             vehicle_available = vehicle.is_available(start_date, end_date)
-        except Exception:
+        except Exception as e:
+            logging.exception("Error computing vehicle availability")
             vehicle_available = False
     payment_methods = [p.to_dict() for p in PaymentMethod.query.all()]
     extras = [e.to_dict() for e in ReservationExtra.query.filter_by(isActive=1).all()]
@@ -62,8 +67,9 @@ def reservation():
             if start_date and end_date:
                 if not v.is_available(start_date, end_date):
                     continue
-        except Exception:
+        except Exception as e:
             # Em caso de erro ao validar disponibilidade, pular o veículo
+            logging.exception("Error validating vehicle availability for list")
             continue
         vehicles.append(v.to_dict())
     testimonials = [t.to_dict() for t in Testimonial.query.filter_by(isActive=1).all()]
@@ -85,7 +91,7 @@ def reservation():
 def my_reservations():
     if "user_id" not in session:
         flash("Faça login para ver as suas reservas", "modal-error")
-        return
+        return redirect(url_for("users.login", next=request.url))
 
     reservations = Reservation.query.filter_by(idUser=session["user_id"]).all()
     data = []
@@ -95,10 +101,18 @@ def my_reservations():
         d["vehicle_model"] = vehicle.model if vehicle else "N/A"
         d["vehicle_image"] = vehicle.imageUrl if vehicle else None
         d["vehicle_brand"] = vehicle.brand.name if vehicle and vehicle.brand else ""
-        # estado da reserva em texto
-        statuses = {1: "Pendente", 2: "Confirmada", 3: "Cancelada", 4: "Concluída"}
+        # estado da reserva em texto (usar constantes centrais)
+        statuses = {
+            ReservationStates.PENDING: "Pendente",
+            ReservationStates.CONFIRMED: "Confirmada",
+            ReservationStates.CANCELLED: "Cancelada",
+            ReservationStates.COMPLETED: "Concluída",
+        }
         d["status_name"] = statuses.get(r.idReservationStatus, "Pendente")
-        d["can_edit"] = r.idReservationStatus not in (3, 4)
+        d["can_edit"] = r.idReservationStatus not in (
+            ReservationStates.CANCELLED,
+            ReservationStates.COMPLETED,
+        )
         data.append(d)
 
     return render_template(
@@ -110,7 +124,7 @@ def my_reservations():
 def reserve():
     if "user_id" not in session:
         flash("Faça login para fazer uma reserva", "modal-error")
-        return 
+        return redirect(url_for("users.login", next=request.url))
     try:
         vehicle_id_str = request.form.get("vehicle_id")
         if not vehicle_id_str:
@@ -157,7 +171,8 @@ def reserve():
                 # calcular dias a partir da reserva criada
                 try:
                     total_days = (reservation.endDate - reservation.startDate).days
-                except Exception:
+                except (TypeError, AttributeError) as e:
+                    logging.exception("Error computing total_days for extras link")
                     total_days = 0
                 link = ReservationExtrasLink(
                     idReservation=reservation.idReservation,
@@ -191,7 +206,7 @@ def reserve():
 def cancel_reservation(rid):
     if "user_id" not in session:
         flash("Faça login para cancelar uma reserva", "modal-error")
-        return
+        return redirect(url_for("users.login", next=request.url))
     try:
         reservation = Reservation.cancel(rid, session["user_id"])
         db.session.commit()
@@ -205,7 +220,7 @@ def cancel_reservation(rid):
 def edit_reservation(rid):
     if "user_id" not in session:
         flash("Faça login para editar uma reserva", "modal-error")
-        return
+        return redirect(url_for("users.login", next=request.url))
 
     reservation = Reservation.query.filter_by(
         idReservation=rid, idUser=session["user_id"]

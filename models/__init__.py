@@ -28,3 +28,20 @@ def load_models():
         globals()[class_name] = cls
     global __all__
     __all__ = list(_MODEL_MAP.values())
+
+
+_LOADED = False
+
+
+def ensure_loaded():
+    """Ensure models are loaded into the `models` package globals.
+
+    Call this at the top of modules that import from `models` (only
+    necessary if you're encountering circular imports). Prefer calling
+    once (e.g. from `app.py` at startup) and then using `from models import X`.
+    """
+    global _LOADED
+    if _LOADED:
+        return
+    load_models()
+    _LOADED = True

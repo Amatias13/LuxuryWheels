@@ -1,5 +1,11 @@
 from flask import Blueprint, render_template, request
 from datetime import date, timedelta
+import logging
+
+# Ensure models are loaded and import common model classes at module level
+from models import ensure_loaded
+ensure_loaded()
+from models import VehicleBrand
 
 
 def make_list_blueprint(bp_name, route_path, model, template, context_key='items',
@@ -24,7 +30,7 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 if cast:
                     try:
                         return cast(s)
-                    except Exception:
+                    except (ValueError, TypeError):
                         return None
                 return s
 
@@ -38,7 +44,8 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             try:
                 start_date = date.fromisoformat(start_raw)
                 end_date = date.fromisoformat(end_raw)
-            except Exception:
+            except (ValueError, TypeError) as e:
+                logging.debug("Invalid date filters: %s", e)
                 start_date = None
                 end_date = None
         type_filter = last_nonempty_arg('type_filter', cast=int)
@@ -51,12 +58,12 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             if str(cap_raw).endswith('+'):
                 try:
                     capacity_filter = int(str(cap_raw).replace('+', ''))
-                except Exception:
+                except (ValueError, TypeError):
                     capacity_filter = None
             else:
                 try:
                     capacity_filter = int(cap_raw)
-                except Exception:
+                except (ValueError, TypeError):
                     capacity_filter = None
 
         query = model.query
@@ -73,7 +80,6 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         # Filtros de pesquisa
         if search and hasattr(model, 'model'):
-            from models.Vehicle_Brand import VehicleBrand
             brand_ids = [b.idBrand for b in VehicleBrand.query.filter(
                 VehicleBrand.name.ilike(f'%{search}%')
             ).all()]
@@ -108,10 +114,12 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                         od['available'] = o.is_available(start_date, end_date)
                         if not od['available']:
                             continue
-                    except Exception:
+                    except Exception as e:
                         # Em caso de erro ao validar disponibilidade, saltar o veículo
+                        logging.exception("Error checking availability for item in list")
                         continue
-            except Exception:
+            except Exception as e:
+                logging.exception("Error processing item for listing")
                 continue
             data.append(od)
 
@@ -129,7 +137,11 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         if extra_models:
             for key, extra_model in extra_models.items():
-                context[key] = [o.to_dict() for o in extra_model.query.all()]
+                try:
+                    context[key] = [o.to_dict() for o in extra_model.query.all()]
+                except Exception as e:
+                    logging.exception("Error loading extra model %s", key)
+                    context[key] = []
 
         return render_template(template, **context)
 

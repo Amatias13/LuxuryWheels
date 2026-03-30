@@ -75,8 +75,11 @@ def inject_current_user():
     if user_id:
         try:
             user = User.query.get(int(user_id))
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+
+            logging.exception("Error loading current user")
+            user = None
     # sempre expor se ha sessao, mesmo que o objeto nao carregue
     return {
         'current_user': user,

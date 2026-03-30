@@ -1,5 +1,7 @@
 from datetime import datetime, date
 from database import db
+from utils import parse_date
+from models.Status import ReservationStates
 
 
 class Reservation(db.Model):
@@ -17,7 +19,7 @@ class Reservation(db.Model):
         db.Integer,
         db.ForeignKey("Reservation_Status.idReservationStatus"),
         nullable=False,
-        default=1,
+        default=ReservationStates.PENDING,
     )
     createdAt = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updatedAt = db.Column(db.DateTime, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
@@ -44,15 +46,6 @@ class Reservation(db.Model):
         from models.Payment_Status import PaymentStatus
 
         # aceitar formatos comuns: ISO YYYY-MM-DD ou DD/MM/YYYY (UI pode enviar local format)
-        def parse_date(s):
-            from datetime import datetime
-            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
-                try:
-                    return datetime.strptime(s, fmt).date()
-                except Exception:
-                    continue
-            raise ValueError("Formato de data inválido")
-
         sd = parse_date(data["startDate"])
         ed = parse_date(data["endDate"])
 
@@ -99,7 +92,7 @@ class Reservation(db.Model):
             endDate=ed,
             totalDays=total_days,
             totalPrice=total_price,
-            idReservationStatus=1,  # Pendente
+            idReservationStatus=ReservationStates.PENDING,  # Pendente
         )
 
         return reservation, vehicle, total_price
@@ -115,7 +108,7 @@ class Reservation(db.Model):
 
         if not reservation:
             raise ValueError("Reserva não encontrada")
-        if reservation.idReservationStatus == 3:
+        if reservation.idReservationStatus == ReservationStates.CANCELLED:
             raise ValueError("Reserva já cancelada")
 
         # Regra: não permitir cancelamento com menos de 24 horas para o início
@@ -127,7 +120,7 @@ class Reservation(db.Model):
         # Não alterar `isActive` ao cancelar — apenas marcar reserva como cancelada.
         vehicle = Vehicle.query.get(reservation.idVehicle)
 
-        reservation.idReservationStatus = 3  # Cancelada
+        reservation.idReservationStatus = ReservationStates.CANCELLED  # Cancelada
 
         return reservation
 
@@ -142,18 +135,8 @@ class Reservation(db.Model):
 
         if not reservation:
             raise ValueError("Reserva não encontrada")
-        if reservation.idReservationStatus == 3:
+        if reservation.idReservationStatus == ReservationStates.CANCELLED:
             raise ValueError("Não é possível alterar uma reserva cancelada")
-
-        # aceitar formatos YYYY-MM-DD ou DD/MM/YYYY
-        def parse_date(s):
-            from datetime import datetime
-            for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
-                try:
-                    return datetime.strptime(s, fmt).date()
-                except Exception:
-                    continue
-            raise ValueError("Formato de data inválido")
 
         sd = parse_date(start_date)
         ed = parse_date(end_date)

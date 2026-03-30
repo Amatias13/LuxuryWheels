@@ -1,5 +1,7 @@
 from datetime import date, timedelta
 from database import db
+from models.Status import ReservationStates
+from models.helpers import has_reservation_overlap, has_reservation_on
 
 
 class Vehicle(db.Model):
@@ -38,18 +40,22 @@ class Vehicle(db.Model):
     def is_available(self, start_date=None, end_date=None, exclude_reservation_id=None):
         """Verifica se o veiculo esta disponivel.
         Indisponivel se:
-        - isActive == 0 (reservado) — ignorado se for uma edicao da propria reserva
+        - isActive == 0 (reservado)
         - nextRevisionDate < hoje
         - lastLegalizationDate < hoje - 1 ano
         - existe uma reserva confirmada/pendente que se sobrepoe ao intervalo solicitado
+
+        Comportamento:
+        - Se `start_date` e `end_date` forem fornecidos, `isActive` é ignorado
+          (disponibilidade é determinada por sobreposição de reservas e
+          checks técnicos como revisão/legalização). Isto permite editar uma
+          reserva existente usando `exclude_reservation_id` sem que o campo
+          `isActive` bloqueie a operação.
+        - Se não forem fornecidas datas, `isActive` é respeitado para indicar
+          se o veículo está no catálogo ativo.
         """
         today = date.today()
-
-        # So verificar isActive se NAO for uma edicao da propria reserva
-        # (ao editar, o veiculo ja esta inativo por causa desta mesma reserva)
-        if not self.isActive and not exclude_reservation_id:
-            return False
-
+        # Technical checks always apply
         if self.nextRevisionDate and self.nextRevisionDate < today:
             return False
         if self.lastLegalizationDate and self.lastLegalizationDate < today - timedelta(
@@ -57,56 +63,25 @@ class Vehicle(db.Model):
         ):
             return False
 
-        # Se não forem fornecidas datas, apenas valida checks gerais acima
-        if not (start_date and end_date):
+        # If dates provided, determine availability based on reservations overlap
+        # (ignore `isActive` in this case to allow editing existing reservations).
+        if start_date and end_date:
+            if has_reservation_overlap(self.idVehicle, start_date, end_date, exclude_reservation_id=exclude_reservation_id):
+                return False
             return True
 
-        # Checar sobreposição com reservas existentes (ignorar reservas canceladas - status 3)
-        from models.Reservation import Reservation
-
-        # start_date/end_date devem ser date objects
-        for r in (
-            Reservation.query.filter_by(idVehicle=self.idVehicle)
-            .filter(Reservation.idReservationStatus != 3)
-            .all()
-        ):
-            # ignorar reserva corrente se pedida
-            if (
-                exclude_reservation_id
-                and getattr(r, "idReservation", None) == exclude_reservation_id
-            ):
-                continue
-            # existe sobreposição se sd < r.endDate e ed > r.startDate
-            if start_date < r.endDate and end_date > r.startDate:
-                return False
-
+        # No dates provided: respect isActive as catalogue flag
+        if not self.isActive:
+            return False
         return True
 
     def has_reservation_between(self, start_date, end_date, ignore_statuses=(3,)):
         """Retorna True se existir uma reserva (não em estados ignorados) que se sobreponha ao intervalo fornecido."""
-        from models.Reservation import Reservation
-
-        for r in (
-            Reservation.query.filter_by(idVehicle=self.idVehicle)
-            .filter(Reservation.idReservationStatus.notin_(ignore_statuses))
-            .all()
-        ):
-            if start_date < r.endDate and end_date > r.startDate:
-                return True
-        return False
+        return has_reservation_overlap(self.idVehicle, start_date, end_date, exclude_reservation_id=None, ignore_statuses=ignore_statuses)
 
     def has_reservation_on(self, day):
         """Verifica se existe alguma reserva que inclua o dia (date object)."""
-        from models.Reservation import Reservation
-
-        for r in (
-            Reservation.query.filter_by(idVehicle=self.idVehicle)
-            .filter(Reservation.idReservationStatus != 3)
-            .all()
-        ):
-            if r.startDate <= day < r.endDate:
-                return True
-        return False
+        return has_reservation_on(self.idVehicle, day)
 
     def to_dict(self):
         return {

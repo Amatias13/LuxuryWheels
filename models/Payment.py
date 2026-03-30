@@ -1,5 +1,6 @@
 from datetime import datetime
 from database import db
+from models.Status import ReservationStates, PaymentStates
 
 
 class Payment(db.Model):
@@ -17,7 +18,7 @@ class Payment(db.Model):
         db.Integer,
         db.ForeignKey("Payment_Status.idPaymentStatus"),
         nullable=False,
-        default=1,
+        default=PaymentStates.PENDING,
     )
 
     def to_dict(self):
@@ -43,9 +44,9 @@ class Payment(db.Model):
             idReservation=reservation_id,
             idPaymentMethod=int(payment_method_id),
             amount=amount,
-            idPaymentStatus=2,  # Concluído
+            idPaymentStatus=PaymentStates.COMPLETED,  # Concluído
         )
         # Confirmar reserva
-        reservation.idReservationStatus = 2  # Confirmada
+        reservation.idReservationStatus = ReservationStates.CONFIRMED  # Confirmada
 
         return payment, reservation
