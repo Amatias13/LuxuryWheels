@@ -44,9 +44,10 @@ class Payment(db.Model):
             idReservation=reservation_id,
             idPaymentMethod=int(payment_method_id),
             amount=amount,
-            idPaymentStatus=PaymentStates.COMPLETED,  # Concluído
+            idPaymentStatus=PaymentStates.COMPLETED,  # Completed
         )
-        # Confirmar reserva
-        reservation.idReservationStatus = ReservationStates.CONFIRMED  # Confirmada
+        # Reservation Completed
+
+        reservation.idReservationStatus = ReservationStates.CONFIRMED  # Completed
 
         return payment, reservation

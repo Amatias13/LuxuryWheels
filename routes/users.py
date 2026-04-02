@@ -14,7 +14,7 @@ def login():
         if user:
             session["user_id"] = user.idUser
             flash("Login efetuado com sucesso", "modal")
-            # Redirecionar para a pagina de origem se existir parametro next
+            # Redirect to the originating page if a next parameter exists
             next_url = request.args.get("next") or request.form.get("next")
             return redirect(next_url if next_url else url_for("home"))
         flash("Email ou palavra-passe incorretos", "modal-error")

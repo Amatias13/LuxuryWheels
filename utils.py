@@ -27,3 +27,25 @@ def parse_date(s):
         except (ValueError, TypeError):
             continue
     raise ValueError("Formato de data inválido")
+
+
+def parse_time(s):
+    """Parse a time string in common UI formats and return a time object.
+
+    Accepts formats like "12:35 PM", "12 : 35 PM" or "23:15".
+    Returns a `time` object or raises `ValueError`.
+    """
+    from datetime import datetime
+
+    if s is None:
+        raise ValueError("Formato de hora inválido")
+
+    # normalize spaces around colon ("12 : 35 PM" -> "12:35 PM")
+    s_norm = str(s).strip().replace(' ', '')
+    # Try common formats
+    for fmt in ("%I:%M%p", "%H:%M"):
+        try:
+            return datetime.strptime(s_norm, fmt).time()
+        except (ValueError, TypeError):
+            continue
+    raise ValueError("Formato de hora inválido")

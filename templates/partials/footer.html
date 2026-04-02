@@ -29,3 +29,17 @@
       </div>
   </div>
 </footer>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    document.querySelectorAll('.timepicker').forEach(function(el){
+      if(!el.value) return;
+      var v = el.value.trim();
+      // remove spaces around colon and normalize AM/PM spacing
+      v = v.replace(/\s*:\s*/, ':');
+      v = v.replace(/\s+([AP]M)$/i, ' $1');
+      el.value = v;
+    });
+  }catch(e){console && console.debug && console.debug('timepicker normalize error', e);} 
+});
+</script>

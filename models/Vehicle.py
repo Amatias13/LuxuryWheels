@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, time
 from database import db
 from models.Status import ReservationStates
 from models.helpers import has_reservation_overlap, has_reservation_on
@@ -22,7 +22,6 @@ class Vehicle(db.Model):
     lastRevisionDate = db.Column(db.Date, nullable=False)
     nextRevisionDate = db.Column(db.Date, nullable=False)
     lastLegalizationDate = db.Column(db.Date, nullable=False)
-    isActive = db.Column(db.Integer, default=1)
     createdAt = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     updatedAt = db.Column(
         db.DateTime,
@@ -30,7 +29,7 @@ class Vehicle(db.Model):
         onupdate=db.func.current_timestamp(),
     )
 
-    # Relacoes para aceder a nome da marca, categoria e tipo diretamente
+    # Relationships to access brand/category/type names directly in templates and APIs without extra queries
     brand = db.relationship("VehicleBrand", foreign_keys=[idBrand], lazy="joined")
     category = db.relationship(
         "VehicleCategory", foreign_keys=[idCategory], lazy="joined"
@@ -40,19 +39,16 @@ class Vehicle(db.Model):
     def is_available(self, start_date=None, end_date=None, exclude_reservation_id=None):
         """Verifica se o veiculo esta disponivel.
         Indisponivel se:
-        - isActive == 0 (reservado)
         - nextRevisionDate < hoje
         - lastLegalizationDate < hoje - 1 ano
         - existe uma reserva confirmada/pendente que se sobrepoe ao intervalo solicitado
 
         Comportamento:
-        - Se `start_date` e `end_date` forem fornecidos, `isActive` é ignorado
-          (disponibilidade é determinada por sobreposição de reservas e
-          checks técnicos como revisão/legalização). Isto permite editar uma
-          reserva existente usando `exclude_reservation_id` sem que o campo
-          `isActive` bloqueie a operação.
-        - Se não forem fornecidas datas, `isActive` é respeitado para indicar
-          se o veículo está no catálogo ativo.
+        - Se `start_date` e `end_date` forem fornecidos
+          a disponibilidade é determinada por sobreposição de reservas e
+          checks técnicos como revisão/legalização. Isto permite editar uma
+          reserva existente usando `exclude_reservation_id` para ignorar a própria reserva na validação de disponibilidade.
+        - Se não forem fornecidas datas, a disponibilidade é determinada apenas pelos checks técnicos.
         """
         today = date.today()
         # Technical checks always apply
@@ -62,16 +58,27 @@ class Vehicle(db.Model):
             days=365
         ):
             return False
+        # If dates/datetimes provided, determine availability based on reservations overlap.
+        # Accept `date` or `datetime` objects. When no explicit dates are provided,
+        # default to today..today+1.
+        from datetime import datetime
+        if not start_date or not end_date:
+            start_dt = datetime.combine(today, time.min)
+            end_dt = start_dt + timedelta(days=1)
+        else:
+            # normalize inputs to datetimes
+            if isinstance(start_date, datetime):
+                start_dt = start_date
+            else:
+                start_dt = datetime.combine(start_date, time.min)
+            if isinstance(end_date, datetime):
+                end_dt = end_date
+            else:
+                end_dt = datetime.combine(end_date, time.min)
 
-        # If dates provided, determine availability based on reservations overlap
-        # (ignore `isActive` in this case to allow editing existing reservations).
-        if start_date and end_date:
-            if has_reservation_overlap(self.idVehicle, start_date, end_date, exclude_reservation_id=exclude_reservation_id):
-                return False
-            return True
-
-        # No dates provided: respect isActive as catalogue flag
-        if not self.isActive:
+        if has_reservation_overlap(
+            self.idVehicle, start_dt, end_dt, exclude_reservation_id=exclude_reservation_id
+        ):
             return False
         return True
 
@@ -103,8 +110,7 @@ class Vehicle(db.Model):
             "lastLegalizationDate": (
                 str(self.lastLegalizationDate) if self.lastLegalizationDate else None
             ),
-            "isActive": self.isActive,
-            # Por omissão, considerar disponível (detalhes por data são
-            # avaliados quando o intervalo é fornecido nas rotas).
+            
+            # By default, consider available (date-specific details are evaluated when interval is provided in routes).
             "available": True,
         }

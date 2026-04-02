@@ -1,7 +1,9 @@
-from datetime import datetime, date
+from datetime import datetime, date, time
 from database import db
 from utils import parse_date
 from models.Status import ReservationStates
+from utils import parse_time
+import math
 
 
 class Reservation(db.Model):
@@ -11,8 +13,9 @@ class Reservation(db.Model):
     idVehicle = db.Column(
         db.Integer, db.ForeignKey("Vehicle.idVehicle"), nullable=False
     )
-    startDate = db.Column(db.Date, nullable=False)
-    endDate = db.Column(db.Date, nullable=False)
+    # store full datetimes (date + optional time)
+    startDate = db.Column(db.DateTime, nullable=False)
+    endDate = db.Column(db.DateTime, nullable=False)
     totalDays = db.Column(db.Integer, nullable=False)
     totalPrice = db.Column(db.Float, nullable=False)
     idReservationStatus = db.Column(
@@ -29,8 +32,12 @@ class Reservation(db.Model):
             "id": self.idReservation,
             "user_id": self.idUser,
             "vehicle_id": self.idVehicle,
-            "startDate": str(self.startDate),
-            "endDate": str(self.endDate),
+            # ISO datetimes
+            "startDate": self.startDate.isoformat() if self.startDate else None,
+            "endDate": self.endDate.isoformat() if self.endDate else None,
+            # separate time strings for templates
+            "startTime": (self.startDate.strftime('%I:%M %p') if self.startDate else None),
+            "endTime": (self.endDate.strftime('%I:%M %p') if self.endDate else None),
             "totalDays": self.totalDays,
             "totalPrice": self.totalPrice,
             "status_id": self.idReservationStatus,
@@ -42,34 +49,50 @@ class Reservation(db.Model):
         Valida disponibilidade e marca o veiculo como inativo (T4).
         """
         from models.Vehicle import Vehicle
-        from models.Payment import Payment
-        from models.Payment_Status import PaymentStatus
 
         # aceitar formatos comuns: ISO YYYY-MM-DD ou DD/MM/YYYY (UI pode enviar local format)
         sd = parse_date(data["startDate"])
         ed = parse_date(data["endDate"])
+        # Optional times
+        st = None
+        et = None
+        try:
+            if data.get("startTime"):
+                st = parse_time(data.get("startTime"))
+        except ValueError:
+            st = None
+        try:
+            if data.get("endTime"):
+                et = parse_time(data.get("endTime"))
+        except ValueError:
+            et = None
 
-        if ed <= sd:
+        # Build datetimes for precise comparison
+        sd_dt = datetime.combine(sd, st if st else time.min)
+        ed_dt = datetime.combine(ed, et if et else time.min)
+
+        if ed_dt <= sd_dt:
             raise ValueError("A data de fim deve ser posterior à data de início")
 
-        total_days = (ed - sd).days
+        # Charge by whole days; a 24-hour period counts as 1 day. Use ceil
+        total_days = math.ceil((ed_dt - sd_dt).total_seconds() / 86400)
 
         vehicle = Vehicle.query.get(data["idVehicle"])
         if not vehicle:
             raise ValueError("Veículo não encontrado")
 
-        # Verificar disponibilidade no intervalo solicitado
-        if not vehicle.is_available(sd, ed):
+        # Check availability using datetimes for accurate validation, especially if times are provided
+        if not vehicle.is_available(sd_dt, ed_dt):
             raise ValueError("Veículo não disponível para o intervalo solicitado")
 
         total_price = total_days * vehicle.dailyRate
 
-        # Incluir extras (dailyPrice) se fornecidos: cada extra é cobrada por dia
+        # Includes extras (dailyPrice) if provided: each extra is charged per day
         extras_total = 0.0
         if extras:
             from models.Reservation_Extra import ReservationExtra
 
-            # extras pode ser lista de ids (int) ou strings
+            # extras can be a list of ids (int) or strings
             for ex_id in extras:
                 try:
                     ex_id_int = int(ex_id)
@@ -81,18 +104,14 @@ class Reservation(db.Model):
 
         total_price += extras_total
 
-        # Nota: não marcar `isActive` aqui — disponibilidade é determinada por
-        # reservas nos intervalos de data. Manter `isActive` para indicar se o
-        # veículo existe/está ativo no catálogo, não para bloquear por reservas.
-
         reservation = cls(
             idUser=data["idUser"],
             idVehicle=vehicle.idVehicle,
-            startDate=sd,
-            endDate=ed,
+            startDate=sd_dt,
+            endDate=ed_dt,
             totalDays=total_days,
             totalPrice=total_price,
-            idReservationStatus=ReservationStates.PENDING,  # Pendente
+            idReservationStatus=ReservationStates.PENDING,  # PENDING
         )
 
         return reservation, vehicle, total_price
@@ -111,21 +130,26 @@ class Reservation(db.Model):
         if reservation.idReservationStatus == ReservationStates.CANCELLED:
             raise ValueError("Reserva já cancelada")
 
-        # Regra: não permitir cancelamento com menos de 24 horas para o início
+        # Rule: do not allow cancellation if the reservation has already started
         from datetime import date
         today = date.today()
-        if reservation.startDate and (reservation.startDate - today).days < 1:
-            raise ValueError("Cancelamento não permitido nas 24 horas anteriores ao início da reserva")
+        if reservation.startDate and today >= reservation.startDate.date():
+            raise ValueError("Não é possível cancelar uma reserva que já começou")
+        # Additional rule: do not allow cancellation within 24 hours of the start date
+        if reservation.startDate and (reservation.startDate.date() - today).days < 1:
+            raise ValueError(
+                "Cancelamento não permitido nas 24 horas anteriores ao início da reserva"
+            )
 
-        # Não alterar `isActive` ao cancelar — apenas marcar reserva como cancelada.
+        # Do not change `isActive` on cancel — just mark reservation as cancelled. The vehicle's availability logic should ignore cancelled reservations.
         vehicle = Vehicle.query.get(reservation.idVehicle)
 
-        reservation.idReservationStatus = ReservationStates.CANCELLED  # Cancelada
+        reservation.idReservationStatus = ReservationStates.CANCELLED  # Cancelled
 
         return reservation
 
     @classmethod
-    def update_dates(cls, reservation_id, user_id, start_date, end_date):
+    def update_dates(cls, reservation_id, user_id, start_date, end_date, start_time=None, end_time=None):
         """Altera as datas de uma reserva e recalcula o total."""
         from models.Vehicle import Vehicle
 
@@ -140,25 +164,41 @@ class Reservation(db.Model):
 
         sd = parse_date(start_date)
         ed = parse_date(end_date)
+        # parse optional time parameters (prefer explicit args)
+        st = None
+        et = None
+        try:
+            if start_time:
+                st = parse_time(start_time)
+        except Exception:
+            st = None
+        try:
+            if end_time:
+                et = parse_time(end_time)
+        except Exception:
+            et = None
 
-        if ed <= sd:
+        sd_dt = datetime.combine(sd, st if st else time.min)
+        ed_dt = datetime.combine(ed, et if et else time.min)
+
+        if ed_dt <= sd_dt:
             raise ValueError("A data de fim deve ser posterior à data de início")
 
-        # Regra: não permitir alterações com menos de 24 horas para o início atual
+        # Rule: do not allow changes within 24 hours of the current start date
         from datetime import date
         today = date.today()
-        if reservation.startDate and (reservation.startDate - today).days < 1:
+        if reservation.startDate and (reservation.startDate.date() - today).days < 1:
             raise ValueError("Alterações não permitidas nas 24 horas anteriores ao início da reserva")
 
         vehicle = Vehicle.query.get(reservation.idVehicle)
 
-        # Verificar disponibilidade no novo intervalo, ignorando a própria reserva
-        if not vehicle.is_available(sd, ed, exclude_reservation_id=reservation_id):
+        # Check availability for the new interval, excluding the current reservation to allow changes within the same slot
+        if not vehicle.is_available(sd_dt, ed_dt, exclude_reservation_id=reservation_id):
             raise ValueError("Veículo não disponível para o novo intervalo solicitado")
 
-        total_days = (ed - sd).days
-        reservation.startDate = sd
-        reservation.endDate = ed
+        total_days = math.ceil((ed_dt - sd_dt).total_seconds() / 86400)
+        reservation.startDate = sd_dt
+        reservation.endDate = ed_dt
         reservation.totalDays = total_days
         reservation.totalPrice = total_days * vehicle.dailyRate
 

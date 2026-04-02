@@ -35,21 +35,37 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 return s
 
         search = (last_nonempty_arg('car_search') or '').strip()
-        # Ler datas opcionais para filtrar disponibilidade
+        # Read optional dates for availability filtering. 
+        # If provided, availability is determined by reservation overlap.
+        #  If not provided, availability is determined by technical checks (revision/legalization). 
+        # This allows editing an existing reservation using `exclude_reservation_id` to ignore the reservation itself in availability validation.
         start_raw = last_nonempty_arg('startDate')
         end_raw = last_nonempty_arg('endDate')
+        start_time_raw = last_nonempty_arg('startTime')
+        end_time_raw = last_nonempty_arg('endTime')
         start_date = None
         end_date = None
-        if start_raw and end_raw:
-            try:
+        # Accept either both dates or a single date. If only one date is
+        # provided, treat the requested interval as that day -> next day
+        # (i.e. a single-day reservation) so availability is still checked.
+        try:
+            if start_raw:
                 start_date = date.fromisoformat(start_raw)
+            if end_raw:
                 end_date = date.fromisoformat(end_raw)
-            except (ValueError, TypeError) as e:
-                logging.debug("Invalid date filters: %s", e)
-                start_date = None
-                end_date = None
+            if start_date and not end_date:
+                end_date = start_date + timedelta(days=1)
+            if end_date and not start_date:
+                start_date = end_date - timedelta(days=1)
+            # If times were provided, convert to datetimes later when checking availability
+        except (ValueError, TypeError) as e:
+            logging.debug("Invalid date filters: %s", e)
+            start_date = None
+            end_date = None
         type_filter = last_nonempty_arg('type_filter', cast=int)
         category_filter = last_nonempty_arg('category_filter', cast=int)
+        brand_filter = last_nonempty_arg('brand_filter', cast=int)
+        min_price = last_nonempty_arg('min_price', cast=float)
         max_price = last_nonempty_arg('max_price', cast=float)
         # capacity_filter may be '9+' in UI; tratar esse caso
         cap_raw = last_nonempty_arg('capacity_filter')
@@ -68,17 +84,19 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         query = model.query
 
-        # T5: excluir veiculos com revisao vencida ou legalizacao > 1 ano
+        # T5: exclude vehicles with overdue revision or legalization > 1 year 
         if hasattr(model, 'nextRevisionDate'):
             today = date.today()
             one_year_ago = today - timedelta(days=365)
+            # Always apply technical checks (revision/legalization). Do NOT
+            # filter by `isActive` here — availability is computed by
+            # `is_available()` so catalog visibility should follow that logic.
             query = query.filter(
                 model.nextRevisionDate >= today,
                 model.lastLegalizationDate >= one_year_ago,
-                model.isActive == 1,
             )
 
-        # Filtros de pesquisa
+        # Search filters
         if search and hasattr(model, 'model'):
             brand_ids = [b.idBrand for b in VehicleBrand.query.filter(
                 VehicleBrand.name.ilike(f'%{search}%')
@@ -91,31 +109,74 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
         if type_filter and hasattr(model, 'idType'):
             query = query.filter(model.idType == type_filter)
 
+        if brand_filter and hasattr(model, 'idBrand'):
+            query = query.filter(model.idBrand == brand_filter)
+
         if category_filter and hasattr(model, 'idCategory'):
             query = query.filter(model.idCategory == category_filter)
 
-        if max_price and hasattr(model, 'dailyRate'):
+        if min_price is not None and hasattr(model, 'dailyRate'):
+            query = query.filter(model.dailyRate >= min_price)
+        if max_price is not None and hasattr(model, 'dailyRate'):
             query = query.filter(model.dailyRate <= max_price)
 
         if capacity_filter and hasattr(model, 'capacity'):
             query = query.filter(model.capacity >= capacity_filter)
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        # Filtrar indisponíveis no intervalo (se fornecido). Nota: isto filtra
-        # apenas os itens da página atual — pode reduzir o número real mostrado.
+        # Filter unavailable items in the current page based on the provided interval. Note: this only filters items in the current page, which may reduce the actual number shown.
         data = []
         for o in pagination.items:
             try:
-                # Se houver um intervalo pedido, validar disponibilidade e
-                # preencher o campo `available` no dicionário do veículo.
+                # If an interval is requested, validate availability and fill the `available` field in the vehicle's dictionary.
                 od = o.to_dict()
-                if start_date and end_date and hasattr(o, 'is_available'):
+                # Always check availability using sensible defaults
+                if hasattr(o, 'is_available'):
                     try:
-                        od['available'] = o.is_available(start_date, end_date)
+                        # If times provided, combine into datetimes
+                        from datetime import datetime, time
+                        from utils import parse_time
+
+                        now_dt = datetime.now()
+
+                        # Determine sensible defaults for start/end datetimes
+                        if not start_date and not end_date:
+                            # No dates provided at all -> start now, end 24h later
+                            start_arg = now_dt
+                            end_arg = now_dt + timedelta(days=1)
+                        else:
+                            # Use provided dates or sensible fallbacks
+                            sd = start_date or date.today()
+                            ed = end_date or (sd + timedelta(days=1))
+                            # Default to whole-day range unless times are provided
+                            start_arg = datetime.combine(sd, time.min)
+                            end_arg = datetime.combine(ed, time.max)
+                            # If start date is today and no start time, use current time
+                            if not start_time_raw and sd == date.today():
+                                start_arg = datetime.combine(sd, now_dt.time())
+
+                        # If explicit times are provided, override the defaults
+                        try:
+                            if start_time_raw:
+                                st = parse_time(start_time_raw)
+                                # ensure sd is defined for combining
+                                sd = start_date or date.today()
+                                start_arg = datetime.combine(sd, st)
+                        except Exception:
+                            pass
+                        try:
+                            if end_time_raw:
+                                et = parse_time(end_time_raw)
+                                ed = end_date or (start_date or date.today()) + timedelta(days=1)
+                                end_arg = datetime.combine(ed, et)
+                        except Exception:
+                            pass
+
+                        od['available'] = o.is_available(start_arg, end_arg)
                         if not od['available']:
                             continue
                     except Exception as e:
-                        # Em caso de erro ao validar disponibilidade, saltar o veículo
+                        # In case of error when validating availability, skip the vehicle
                         logging.exception("Error checking availability for item in list")
                         continue
             except Exception as e:
@@ -129,8 +190,11 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             'search': search,
             'startDate': start_raw,
             'endDate': end_raw,
+            'startTime': start_time_raw,
+            'endTime': end_time_raw,
             'type_filter': type_filter,
             'category_filter': category_filter,
+            'min_price': min_price,
             'max_price': max_price,
             'capacity_filter': capacity_filter,
         }

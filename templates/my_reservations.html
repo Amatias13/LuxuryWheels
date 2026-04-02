@@ -44,8 +44,8 @@
                   {{ r.status_name }}
                 </span>
                 <ul style="list-style:none;padding:0;margin-top:12px;">
-                  <li><i class="fa fa-calendar"></i> Início: <strong>{{ r.startDate }}</strong></li>
-                  <li><i class="fa fa-calendar"></i> Fim: <strong>{{ r.endDate }}</strong></li>
+                  <li><i class="fa fa-calendar"></i> Início: <strong>{{ r.startDate_display or r.startDate }}</strong></li>
+                  <li><i class="fa fa-calendar"></i> Fim: <strong>{{ r.endDate_display or r.endDate }}</strong></li>
                   <li><i class="fa fa-clock-o"></i> Dias: <strong>{{ r.totalDays }}</strong></li>
                   <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
                 </ul>

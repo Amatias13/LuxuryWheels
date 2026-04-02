@@ -74,7 +74,6 @@ CREATE TABLE Vehicle (
     lastRevisionDate DATE,
     nextRevisionDate DATE,
     lastLegalizationDate DATE,
-    isActive INTEGER DEFAULT 1,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (idBrand) REFERENCES Vehicle_Brand(idBrand),

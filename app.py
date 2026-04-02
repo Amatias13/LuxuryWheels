@@ -80,7 +80,7 @@ def inject_current_user():
 
             logging.exception("Error loading current user")
             user = None
-    # sempre expor se ha sessao, mesmo que o objeto nao carregue
+    # always expose if there is a session, even if the object fails to load
     return {
         'current_user': user,
         'is_logged_in': bool(user_id),

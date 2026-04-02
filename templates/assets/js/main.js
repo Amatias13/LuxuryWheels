@@ -1,5 +1,5 @@
 (function($){
-  "user strict";
+  "use strict";
 
   $(document).on('ready',function() {
     background();
@@ -24,6 +24,13 @@
     return bg;
     });
   }
+
+  // Expose helper for debugging from the console
+  try {
+    if (typeof window !== 'undefined') {
+      window.showModalMessage = showModalMessage;
+    }
+  } catch(e) { }
 
   
   //Function to the css rule
@@ -69,10 +76,10 @@
     if ($.fn && $.fn.niceSelect) {
       $('select').niceSelect();
     } else {
-      console.warn('[UX DEBUG] niceSelect plugin not available, skipping init');
+        // console.warn('[UX DEBUG] niceSelect plugin not available, skipping init');
     }
   } catch(e) {
-    console.warn('[UX DEBUG] niceSelect init error', e);
+      // console.warn('[UX DEBUG] niceSelect init error', e);
   }
 
   // Access instance of plugin
@@ -187,31 +194,51 @@
             }
           });
           try { $el.data('datepicker-initialized', 'air'); } catch(e) {}
-        } catch(e) { console.warn('[UX DEBUG] air-datepicker init failed', e); }
+        } catch(e) { }
       } else {
-        // no datepicker available; leave input as-is
+        // no datepicker plugin available
       }
     });
     // ensure the popup is on top
     $('.air-datepicker').css('z-index', 99999);
   } catch (e) {
     // ignore if plugin not available
-    console.warn('datepicker init failed', e);
   }
 
 
+      // console.warn('datepicker init failed', e);
   var options = {
     now: "12:35",
     twentyFour: false,
-    title: 'Choose Your Time', 
+    title: 'Choose Your Time'
   };
   try {
     if ($.fn && $.fn.wickedpicker) {
-      $('.timepicker').wickedpicker(options);
+      // Initialize each timepicker using the element's current value if present
+      $('.timepicker').each(function() {
+        var $t = $(this);
+        var elVal = String($t.val() || '').trim();
+        var nowStr = options.now;
+        if (elVal) {
+          var m = elVal.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])?$/);
+          if (m) {
+            var hh = parseInt(m[1], 10);
+            var mm = m[2];
+            var ampm = m[3];
+            if (ampm) {
+              ampm = ampm.toUpperCase();
+              if (ampm === 'PM' && hh !== 12) hh += 12;
+              if (ampm === 'AM' && hh === 12) hh = 0;
+            }
+            nowStr = (hh < 10 ? '0' + hh : '' + hh) + ':' + mm;
+          }
+        }
+        $t.wickedpicker($.extend({}, options, { now: nowStr }));
+      });
     } else {
-      console.warn('[UX DEBUG] wickedpicker plugin not available, skipping init');
+      // wickedpicker not available
     }
-  } catch(e) { console.warn('[UX DEBUG] wickedpicker init error', e); }
+  } catch(e) { }
 
   try {
     if ($.fn && $.fn.owlCarousel) {
@@ -229,8 +256,8 @@
             1000:{ items:3, nav:true }
         }
       });
-    } else console.warn('[UX DEBUG] owlCarousel not available: choose-car-slider skipped');
-  } catch(e) { console.warn('[UX DEBUG] choose-car-slider init error', e); }
+    } else { /* owlCarousel not available */ }
+  } catch(e) { }
 
   try {
     if ($.fn && $.fn.owlCarousel) {
@@ -244,7 +271,7 @@
         responsive:{0:{items:1},1000:{items:1}}
       });
     }
-  } catch(e) { console.warn('[UX DEBUG] testimonial-slider init error', e); }
+  } catch(e) { }
 
   try {
     if ($.fn && $.fn.owlCarousel) {
@@ -258,7 +285,7 @@
         responsive:{0:{items:1},575:{items:2},1000:{items:3}}
       });
     }
-  } catch(e) { console.warn('[UX DEBUG] brand-slider init error', e); }
+  } catch(e) { }
 
   try {
     if ($.fn && $.fn.owlCarousel) {
@@ -273,7 +300,7 @@
         responsive:{0:{items:1},768:{items:3},1000:{items:4,nav:true}}
       });
     }
-  } catch(e) { console.warn('[UX DEBUG] choose-car-slider-two init error', e); }
+  } catch(e) { }
 
   // Reservation form total calculation
   function parseDateYMD(s) {
@@ -357,7 +384,7 @@
       if (!isFinite(days) || days < 0) days = 0;
     }
     // debug: log parsed dates/rate/days
-    try { console.log('[UX DEBUG] updateReservationTotal', { dailyRate: dailyRate, startRaw: $('#startDate').val(), endRaw: $('#endDate').val(), startParsed: sd, endParsed: ed, days: days }); } catch(e) {}
+    try { /* debug suppressed */ } catch(e) {}
     var extrasTotal = 0;
     form.find('.extra-checkbox:checked').each(function () {
       var p = parseFloat($(this).data('daily-price')) || 0;
@@ -368,6 +395,48 @@
     $('#reservation-total').text(total.toFixed(2));
     $('#reservation-total_inline').text(total.toFixed(2));
     $('#reservation-days').text(days);
+  }
+
+  // Parse time strings like "12:35 PM", "5:35 PM", "17:35" -> {h,m}
+  function parseTimeJS(s) {
+    if (!s) return null;
+    var v = String(s).trim();
+    // normalize spaces and remove stray spaces around colon
+    v = v.replace(/\s*:\s*/g, ':').replace(/\s+/g, ' ').trim();
+    // try 12h with AM/PM
+    var m = v.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if (m) {
+      var hh = parseInt(m[1], 10);
+      var mm = parseInt(m[2], 10);
+      var ampm = m[3].toUpperCase();
+      if (ampm === 'PM' && hh !== 12) hh += 12;
+      if (ampm === 'AM' && hh === 12) hh = 0;
+      return {h: hh, m: mm};
+    }
+    // try 24h
+    var m2 = v.match(/^(\d{1,2}):(\d{2})$/);
+    if (m2) {
+      return {h: parseInt(m2[1], 10), m: parseInt(m2[2], 10)};
+    }
+    return null;
+  }
+
+  // Normalize time inputs to a consistent display format (h:mm AM/PM)
+  function normalizeInitialTimeInputs(){
+    $('.timepicker').each(function(){
+      try {
+        var v = $(this).val();
+        if (!v) return;
+        // clean up and parse
+        var t = parseTimeJS(v);
+        if (t) {
+          var hh = t.h % 12 === 0 ? 12 : t.h % 12;
+          var ampm = t.h >= 12 ? 'PM' : 'AM';
+          var mm = (t.m < 10 ? '0' + t.m : t.m);
+          $(this).val(hh + ':' + mm + ' ' + ampm);
+        }
+      } catch(e){}
+    });
   }
 
   // Bind events
@@ -401,33 +470,90 @@
   }
 
   $(document).on('submit', '.reserva-form', function(e){
-    // validate dates before submit
+    // validate dates and times before submit (include times if provided)
     var sd_raw = $('#startDate').val();
     var ed_raw = $('#endDate').val();
+    var st_raw = $('#startTime').val();
+    var et_raw = $('#endTime').val();
     var sd_d = parseDateYMD(sd_raw);
     var ed_d = parseDateYMD(ed_raw);
     var today = new Date();
-    // zero time for comparison
     today.setHours(0,0,0,0);
     if (!sd_d || !ed_d) {
       e.preventDefault();
-      alert('Por favor seleccione datas válidas de início e fim.');
+      showModalMessage('Por favor seleccione datas válidas de início e fim.', 'Erro');
       return false;
     }
-    if (sd_d < today) {
+    // combine times when available
+    var sd_dt = new Date(sd_d.getTime());
+    var ed_dt = new Date(ed_d.getTime());
+    var st = parseTimeJS(st_raw);
+    var et = parseTimeJS(et_raw);
+    if (st) sd_dt.setHours(st.h, st.m, 0, 0);
+    else sd_dt.setHours(0,0,0,0);
+    if (et) ed_dt.setHours(et.h, et.m, 0, 0);
+    else ed_dt.setHours(23,59,59,0);
+
+    if (sd_dt < today) {
       e.preventDefault();
-      alert('A data de início não pode ser anterior a hoje.');
+      showModalMessage('A data de início não pode ser anterior a hoje.', 'Erro');
       return false;
     }
-    if (ed_d <= sd_d) {
+    if (ed_dt <= sd_dt) {
       e.preventDefault();
-      alert('A data de fim deve ser posterior à data de início.');
+      showModalMessage('A data/hora de fim deve ser posterior à data/hora de início.', 'Erro');
       return false;
     }
     // convert date inputs to ISO before submit to avoid backend ambiguity
     $('#startDate').val(formatToISO(sd_raw));
     $('#endDate').val(formatToISO(ed_raw));
+    // ensure payment method selected when present
+    try {
+      var pm = $(this).find('select[name="idPaymentMethod"]');
+      if (pm.length && (!pm.val() || String(pm.val()).trim() === '')) {
+        e.preventDefault();
+        showModalMessage('Por favor seleccione um método de pagamento.', 'Erro');
+        return false;
+      }
+    } catch(e) {}
     // allow submit to continue
+  });
+
+  // Validation for edit reservation form (separate handler)
+  $(document).on('submit', '#edit-reservation-form', function(e){
+    var form = $(this);
+    var sd_raw = form.find('input[name="startDate"]').val();
+    var ed_raw = form.find('input[name="endDate"]').val();
+    var st_raw = form.find('input[name="startTime"]').val();
+    var et_raw = form.find('input[name="endTime"]').val();
+    var sd_d = parseDateYMD(sd_raw);
+    var ed_d = parseDateYMD(ed_raw);
+    var today = new Date(); today.setHours(0,0,0,0);
+    if (!sd_d || !ed_d) {
+      e.preventDefault();
+      showModalMessage('Por favor seleccione datas válidas de início e fim.', 'Erro');
+      return false;
+    }
+    var sd_dt = new Date(sd_d.getTime());
+    var ed_dt = new Date(ed_d.getTime());
+    var st = parseTimeJS(st_raw);
+    var et = parseTimeJS(et_raw);
+    if (st) sd_dt.setHours(st.h, st.m, 0, 0); else sd_dt.setHours(0,0,0,0);
+    if (et) ed_dt.setHours(et.h, et.m, 0, 0); else ed_dt.setHours(23,59,59,0);
+    if (sd_dt < today) {
+      e.preventDefault();
+      showModalMessage('A data de início não pode ser anterior a hoje.', 'Erro');
+      return false;
+    }
+    if (ed_dt <= sd_dt) {
+      e.preventDefault();
+      showModalMessage('A data/hora de fim deve ser posterior à data/hora de início.', 'Erro');
+      return false;
+    }
+    // convert dates to ISO format before submit
+    form.find('input[name="startDate"]').val(formatToISO(sd_raw));
+    form.find('input[name="endDate"]').val(formatToISO(ed_raw));
+    // continue submit
   });
 
   // Ensure totals are recalculated and any leftover modal backdrops removed just before submitting via the reserve button
@@ -435,7 +561,7 @@
     try {
       updateReservationTotal();
     } catch(err) {
-      console.warn('[UX DEBUG] updateReservationTotal error', err);
+      // updateReservationTotal error suppressed
     }
     // small defensive cleanup in case a backdrop is stuck
     setTimeout(function(){
@@ -471,6 +597,17 @@
     });
   }
 
+  // Normalize any startDate/endDate inputs on the page (covers inputs without datepicker class)
+  function normalizeAllDateFields(){
+    $('input[name="startDate"], input[name="endDate"]').each(function(){
+      try {
+        var v = $(this).val();
+        var nv = normalizeDateInputValue(v);
+        if (nv && nv !== v) $(this).val(nv);
+      } catch(e){}
+    });
+  }
+
   // Schedule short-lived polling to catch programmatic mutations from other plugins
   function scheduleNormalize(el) {
     var $el = $(el);
@@ -490,6 +627,8 @@
 
   $(document).ready(function(){
     normalizeInitialDateInputs();
+    normalizeAllDateFields();
+    normalizeInitialTimeInputs();
     updateReservationTotal();
   });
 
@@ -557,7 +696,7 @@
         $el.data('datepicker-initialized','air');
       }
     } catch(e) {
-      console.warn('[UX DEBUG] focus datepicker init failed', e);
+      // focus datepicker init failed (suppressed)
     }
   });
 
@@ -590,12 +729,14 @@
       values: [ 80, 300 ],
       slide: function( event, ui ) {
         $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
-        // update hidden max_price field for search
+        // update hidden min/max fields for search
+        $("#min_price").val(ui.values[0]);
         $("#max_price").val(ui.values[1]);
       }
     });
     $( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
       " - $" + $( "#slider-range" ).slider( "values", 1 ) );
+    $("#min_price").val($( "#slider-range" ).slider( "values", 0 ));
     $("#max_price").val($( "#slider-range" ).slider( "values", 1 ));
   } );
 
@@ -631,22 +772,24 @@
   $('a[data-rel^=lightcase]').lightcase();
 
   // Intercept forms with .confirm-form and use native confirm() dialog
+  // Use a Bootstrap modal for confirmations instead of native confirm()
   $(document).on('submit', '.confirm-form', function(e) {
+    var form = this;
     var msg = $(this).data('confirm') || 'Tem a certeza?';
-    if (!window.confirm(msg)) {
-      e.preventDefault();
-      return false;
-    }
-    // allow the form to submit normally
+    e.preventDefault();
+    showModalConfirm(msg, function(confirmed){
+      if (confirmed) {
+        // submit the form programmatically
+        form.submit();
+      }
+    });
+    return false;
   });
 
   // Global debug hooks: log modal show/hide events and ensure no leftover backdrops remain
   try {
-    $(document).on('shown.bs.modal', '.modal', function(e){
-      console.log('[UX DEBUG] modal shown:', e.target && e.target.id);
-    });
+    $(document).on('shown.bs.modal', '.modal', function(e){ /* suppressed debug */ });
     $(document).on('hidden.bs.modal', '.modal', function(e){
-      console.log('[UX DEBUG] modal hidden:', e.target && e.target.id);
       // small delay then remove any stray backdrops
       setTimeout(function(){
         if ($('.modal.show').length === 0) {
@@ -700,14 +843,130 @@
         if ($m && $m.modal) {
           $m.modal('show');
         } else {
+          // fallback: alert
           alert(msg);
         }
       } catch(e) {
         console.warn('show flash modal failed', e);
-        try { alert(msg); } catch(_){}
+        try { alert(msg); } catch(_){ }
       }
     });
   } catch(e) { console.warn('flash-modal init error', e); }
+
+  // Helper: show a simple modal confirmation with callback
+  function showModalConfirm(message, cb) {
+    var id = 'confirmModalClient';
+    $('#' + id).remove();
+    var html = ''+
+      '<div class="modal fade" id="'+id+'" tabindex="-1" role="dialog" aria-hidden="true">'+
+        '<div class="modal-dialog modal-dialog-centered" role="document">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header"><h5 class="modal-title">Confirmação</h5>'+
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            '</div>'+
+            '<div class="modal-body">'+message+'</div>'+
+            '<div class="modal-footer">'+
+              '<button type="button" class="btn btn-secondary" data-dismiss="modal" id="'+id+'_no">Cancelar</button>'+
+              '<button type="button" class="btn btn-primary" id="'+id+'_yes">Confirmar</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    try { $('body').append(html); } catch(e){ }
+    var $m = $('#' + id);
+    $m.modal('show');
+    $m.on('click', '#'+id+'_yes', function(){
+      $m.modal('hide');
+      cb(true);
+    });
+    $m.on('hidden.bs.modal', function(){
+      cb(false);
+      setTimeout(function(){ $m.remove(); }, 200);
+    });
+  }
+
+  // Helper: show a simple modal message (info/error)
+  function showModalMessage(message, title) {
+    // Use the same flash-modal markup used elsewhere to ensure consistent
+    // behaviour and avoid stray backdrop/footer resizing issues.
+    var autoId = 'flashModalAuto';
+    $('#' + autoId).remove();
+    var t = title || 'Aviso';
+    var html = '' +
+      '<div class="modal fade" id="' + autoId + '" tabindex="-1" role="dialog" aria-hidden="true">' +
+        '<div class="modal-dialog modal-dialog-centered" role="document">' +
+          '<div class="modal-content">' +
+            '<div class="modal-header">' +
+              '<h5 class="modal-title">' + t + '</h5>' +
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span>' +
+              '</button>' +
+            '</div>' +
+            '<div class="modal-body">' + message + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    try { $('body').append(html); } catch(e){}
+    var $m = $('#' + autoId);
+    try {
+      // remove only non-showing stray backdrops
+      $('.modal-backdrop').not('.show').remove();
+      // ensure modal is appended to body (avoid nested containers)
+      try { $m.appendTo('body'); } catch(e){}
+      if ($m && $m.modal) {
+        $m.on('shown.bs.modal', function(){ /* modal shown */ });
+        $m.modal('show');
+        // short delay: if modal is not visible, force display and backdrop
+        setTimeout(function(){
+          var visible = $m.hasClass('show') || $m.is(':visible');
+          if (!visible) {
+            try {
+              $m.addClass('show').css('display','block').attr('aria-hidden','false');
+              $('body').addClass('modal-open');
+              if ($('.modal-backdrop.show').length === 0) {
+                $('<div class="modal-backdrop fade show"></div>').appendTo(document.body);
+              }
+              $m.css('z-index', 200000);
+              /* forced display/backdrop (suppressed debug) */
+            } catch(err) { }
+          }
+        }, 50);
+        // Ensure close button/backdrop/ESC will remove the modal even if plugin misbehaves
+        try {
+          // close button
+          $m.find('.close').off('click.modalClose').on('click.modalClose', function(ev){
+            try { $m.modal && $m.modal('hide'); } catch(e) {}
+            // fallback manual removal
+            try { $m.removeClass('show').hide(); } catch(e) {}
+            try { $('.modal-backdrop').remove(); } catch(e) {}
+            try { $('body').removeClass('modal-open'); } catch(e) {}
+            ev.preventDefault();
+          });
+          // clicking backdrop should close
+          $(document).off('click.modalBackdrop').on('click.modalBackdrop', '.modal-backdrop', function(){
+            try { $m.modal && $m.modal('hide'); } catch(e) {}
+            try { $m.removeClass('show').hide(); } catch(e) {}
+            try { $('.modal-backdrop').remove(); } catch(e) {}
+            try { $('body').removeClass('modal-open'); } catch(e) {}
+          });
+          // ESC key
+          $(document).off('keydown.modalEsc').on('keydown.modalEsc', function(e){
+            if (e.key === 'Escape' || e.keyCode === 27) {
+              try { $m.modal && $m.modal('hide'); } catch(e) {}
+              try { $m.removeClass('show').hide(); } catch(e) {}
+              try { $('.modal-backdrop').remove(); } catch(e) {}
+              try { $('body').removeClass('modal-open'); } catch(e) {}
+            }
+          });
+        } catch(e) { }
+      } else {
+        // bootstrap modal plugin missing; fallback
+        try { alert(message); } catch(_){}
+      }
+    } catch(e) {
+      try { alert(message); } catch(_){ }
+    }
+  }
 
 
 })(jQuery);
