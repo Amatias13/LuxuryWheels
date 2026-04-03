@@ -39,6 +39,13 @@ app.register_blueprint(
             "brands": VehicleBrand,
             "testimonials": Testimonial,
         },
+        # Enable searching by vehicle model and by brand name (best-effort)
+        search_fields=["model"],
+        brand_lookup={
+            "model": VehicleBrand,
+            "name_field": "name",
+            "id_field": "idBrand",
+        },
     )
 )
 
@@ -70,8 +77,9 @@ def contact():
 @app.context_processor
 def inject_current_user():
     from flask import session
+
     user = None
-    user_id = session.get('user_id')
+    user_id = session.get("user_id")
     if user_id:
         try:
             user = User.query.get(int(user_id))
@@ -82,6 +90,6 @@ def inject_current_user():
             user = None
     # always expose if there is a session, even if the object fails to load
     return {
-        'current_user': user,
-        'is_logged_in': bool(user_id),
+        "current_user": user,
+        "is_logged_in": bool(user_id),
     }

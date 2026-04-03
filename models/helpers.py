@@ -23,10 +23,12 @@ def has_reservation_overlap(vehicle_id, start_date, end_date, exclude_reservatio
         if isinstance(v, datetime):
             return v
         # assume date
-        return datetime.combine(v, datetime.min.time()) if not is_end else datetime.combine(v, datetime.min.time())
+        # For end dates, use the end of the day so intervals are inclusive
+        # of the provided date. For start dates, use the start of day.
+        return datetime.combine(v, datetime.min.time()) if not is_end else datetime.combine(v, datetime.max.time())
 
     start_dt = to_dt(start_date)
-    end_dt = to_dt(end_date)
+    end_dt = to_dt(end_date, is_end=True)
 
     query = (
         Reservation.query.filter_by(idVehicle=vehicle_id)

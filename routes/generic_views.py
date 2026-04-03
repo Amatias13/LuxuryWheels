@@ -48,6 +48,26 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
         end_raw = last_nonempty_arg('endDate')
         start_time_raw = last_nonempty_arg('startTime')
         end_time_raw = last_nonempty_arg('endTime')
+        # Normalize time strings for UI/timepicker. Convert values like
+        # "9" or "9:00" into a standard "HH:MM AM/PM" format so the
+        # client-side picker initializes with the correct time instead
+        # of falling back to its default (e.g. "12:35").
+        from utils import parse_time
+        from datetime import time as dt_time
+        try:
+            if start_time_raw:
+                t = parse_time(start_time_raw)
+                # format as 12-hour with AM/PM (matches client expectations)
+                start_time_raw = t.strftime("%I:%M %p")
+        except Exception:
+            # leave as-is on parse failure
+            pass
+        try:
+            if end_time_raw:
+                t2 = parse_time(end_time_raw)
+                end_time_raw = t2.strftime("%I:%M %p")
+        except Exception:
+            pass
         start_date = None
         end_date = None
         # Accept either both dates or a single date. If only one date is
@@ -181,51 +201,60 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             try:
                 # If an interval is requested, validate availability and fill the `available` field in the vehicle's dictionary.
                 od = o.to_dict()
-                # Always check availability using sensible defaults
+                # Only perform reservation-availability checks when the
+                # user supplied an explicit date/time filter. When no
+                # date is provided we avoid treating the implicit
+                # "now..now+1d" interval as a hard exclusion so
+                # search results still show matching vehicles (they
+                # will be marked unavailable in the UI instead).
                 if hasattr(o, 'is_available'):
                     try:
-                        # If times provided, combine into datetimes
-                        from datetime import datetime, time
-                        from utils import parse_time
+                        # If the user provided any explicit date/time
+                        # filters, calculate availability for that interval
+                        # and leave unavailable items out of the results.
+                        if start_raw or end_raw or start_time_raw or end_time_raw:
+                            from datetime import datetime, time
+                            from utils import parse_time
 
-                        now_dt = datetime.now()
+                            now_dt = datetime.now()
 
-                        # Determine sensible defaults for start/end datetimes
-                        if not start_date and not end_date:
-                            # No dates provided at all -> start now, end 24h later
-                            start_arg = now_dt
-                            end_arg = now_dt + timedelta(days=1)
-                        else:
-                            # Use provided dates or sensible fallbacks
-                            sd = start_date or date.today()
-                            ed = end_date or (sd + timedelta(days=1))
-                            # Default to whole-day range unless times are provided
-                            start_arg = datetime.combine(sd, time.min)
-                            end_arg = datetime.combine(ed, time.max)
-                            # If start date is today and no start time, use current time
-                            if not start_time_raw and sd == date.today():
-                                start_arg = datetime.combine(sd, now_dt.time())
-
-                        # If explicit times are provided, override the defaults
-                        try:
-                            if start_time_raw:
-                                st = parse_time(start_time_raw)
-                                # ensure sd is defined for combining
+                            # Determine sensible defaults for start/end datetimes
+                            if not start_date and not end_date:
+                                start_arg = now_dt
+                                end_arg = now_dt + timedelta(days=1)
+                            else:
                                 sd = start_date or date.today()
-                                start_arg = datetime.combine(sd, st)
-                        except Exception:
-                            pass
-                        try:
-                            if end_time_raw:
-                                et = parse_time(end_time_raw)
-                                ed = end_date or (start_date or date.today()) + timedelta(days=1)
-                                end_arg = datetime.combine(ed, et)
-                        except Exception:
-                            pass
+                                ed = end_date or (sd + timedelta(days=1))
+                                start_arg = datetime.combine(sd, time.min)
+                                end_arg = datetime.combine(ed, time.max)
+                                if not start_time_raw and sd == date.today():
+                                    start_arg = datetime.combine(sd, now_dt.time())
 
-                        od['available'] = o.is_available(start_arg, end_arg)
-                        if not od['available']:
-                            continue
+                            # If explicit times are provided, override the defaults
+                            try:
+                                if start_time_raw:
+                                    st = parse_time(start_time_raw)
+                                    sd = start_date or date.today()
+                                    start_arg = datetime.combine(sd, st)
+                            except Exception:
+                                pass
+                            try:
+                                if end_time_raw:
+                                    et = parse_time(end_time_raw)
+                                    ed = end_date or (start_date or date.today()) + timedelta(days=1)
+                                    end_arg = datetime.combine(ed, et)
+                            except Exception:
+                                pass
+
+                            od['available'] = o.is_available(start_arg, end_arg)
+                            if not od['available']:
+                                # when dates provided, skip unavailable vehicles
+                                continue
+                        else:
+                            # No date filters -> don't perform reservation overlap
+                            # exclusion. Still expose `available=True` so the
+                            # template can render the correct state.
+                            od['available'] = True
                     except Exception as e:
                         # In case of error when validating availability, skip the vehicle
                         logging.exception("Error checking availability for item in list")
