@@ -5,12 +5,17 @@ import logging
 # Ensure models are loaded and import common model classes at module level
 from models import ensure_loaded
 ensure_loaded()
-from models import VehicleBrand
 
 
 def make_list_blueprint(bp_name, route_path, model, template, context_key='items',
-                         extra_models=None, per_page=8):
-    """Blueprint com paginacao, filtros de pesquisa e modelos extra."""
+                                                 extra_models=None, per_page=8, search_fields=None,
+                                                 brand_lookup=None):
+    """Blueprint com paginacao, filtros de pesquisa e modelos extra.
+    New optional params:
+    - `search_fields`: iterable of attribute names on `model` to perform ilike search.
+    - `brand_lookup`: dict with keys `model`, `name_field`, `id_field` used to
+        find brand ids to include in search (optional).
+    """
     bp = Blueprint(bp_name, __name__)
 
     @bp.route(route_path)
@@ -67,6 +72,8 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
         brand_filter = last_nonempty_arg('brand_filter', cast=int)
         min_price = last_nonempty_arg('min_price', cast=float)
         max_price = last_nonempty_arg('max_price', cast=float)
+        # Optional ordering: 'price_asc' or 'price_desc'
+        order_by = last_nonempty_arg('order_by')
         # capacity_filter may be '9+' in UI; tratar esse caso
         cap_raw = last_nonempty_arg('capacity_filter')
         capacity_filter = None
@@ -96,15 +103,35 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 model.lastLegalizationDate >= one_year_ago,
             )
 
-        # Search filters
-        if search and hasattr(model, 'model'):
-            brand_ids = [b.idBrand for b in VehicleBrand.query.filter(
-                VehicleBrand.name.ilike(f'%{search}%')
-            ).all()]
-            query = query.filter(
-                db_or(model.model.ilike(f'%{search}%'),
-                      model.idBrand.in_(brand_ids))
-            )
+        # Search filters (configurable)
+        if search:
+            filters = []
+            if search_fields:
+                for field in search_fields:
+                    if hasattr(model, field):
+                        try:
+                            filters.append(getattr(model, field).ilike(f'%{search}%'))
+                        except Exception:
+                            # skip invalid fields
+                            pass
+
+            # Optional brand lookup: expects a dict {'model': BrandModel, 'name_field': 'name', 'id_field': 'idBrand'}
+            if brand_lookup and isinstance(brand_lookup, dict):
+                try:
+                    brand_model = brand_lookup.get('model')
+                    name_field = brand_lookup.get('name_field')
+                    id_field = brand_lookup.get('id_field')
+                    if brand_model and name_field and id_field:
+                        brand_q = brand_model.query.filter(getattr(brand_model, name_field).ilike(f'%{search}%'))
+                        brand_ids = [getattr(b, id_field) for b in brand_q.all()]
+                        if hasattr(model, id_field):
+                            filters.append(getattr(model, id_field).in_(brand_ids))
+                except Exception:
+                    # best-effort: ignore brand lookup failures
+                    pass
+
+            if filters:
+                query = query.filter(db_or(*filters))
 
         if type_filter and hasattr(model, 'idType'):
             query = query.filter(model.idType == type_filter)
@@ -122,6 +149,30 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         if capacity_filter and hasattr(model, 'capacity'):
             query = query.filter(model.capacity >= capacity_filter)
+
+        # Apply ordering if requested and supported by the model
+        try:
+            if order_by:
+                # price ordering
+                if order_by in ('price_asc', 'price_desc') and hasattr(model, 'dailyRate'):
+                    query = query.order_by(model.dailyRate.asc() if order_by == 'price_asc' else model.dailyRate.desc())
+                # type/name ordering (string fields)
+                elif order_by in ('type_asc', 'type_desc'):
+                    if hasattr(model, 'type'):
+                        col = getattr(model, 'type')
+                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
+                    elif hasattr(model, 'name'):
+                        col = getattr(model, 'name')
+                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
+                    elif hasattr(model, 'model'):
+                        col = getattr(model, 'model')
+                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
+                    elif hasattr(model, 'idType'):
+                        col = getattr(model, 'idType')
+                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
+        except Exception:
+            # ignore ordering failures
+            pass
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         # Filter unavailable items in the current page based on the provided interval. Note: this only filters items in the current page, which may reduce the actual number shown.

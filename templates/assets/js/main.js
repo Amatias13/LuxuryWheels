@@ -722,22 +722,54 @@
     
 
   $( function() {
-    $( "#slider-range" ).slider({
-      range: true,
-      min: 0,
-      max: 500,
-      values: [ 80, 300 ],
-      slide: function( event, ui ) {
-        $( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
-        // update hidden min/max fields for search
-        $("#min_price").val(ui.values[0]);
-        $("#max_price").val(ui.values[1]);
+    // Allow server-provided min/max to initialize the slider. Fallback to defaults otherwise.
+    try {
+      // Read server-provided values from either the sidebar or top hidden inputs
+      var serverMin = parseInt($("#min_price").val() || $("#top_min_price").val(), 10);
+      var serverMax = parseInt($("#max_price").val() || $("#top_max_price").val(), 10);
+      // Allow template to provide overall bounds and currency via window.__PRICE_FILTER
+      var wf = window.__PRICE_FILTER || {};
+      var overallMin = (typeof wf.overallMin === 'number') ? wf.overallMin : 0;
+      var overallMax = (typeof wf.overallMax === 'number') ? wf.overallMax : ((typeof wf.overallMax === 'string') ? parseInt(wf.overallMax,10) || 500 : 500);
+      var currency = wf.currency || '€';
+      var defaultMin = (typeof wf.defaultMin === 'number') ? wf.defaultMin : 80;
+      var defaultMax = (typeof wf.defaultMax === 'number') ? wf.defaultMax : Math.max(300, overallMax);
+      var minVal = (isFinite(serverMin) && !isNaN(serverMin)) ? serverMin : defaultMin;
+      var maxVal = (isFinite(serverMax) && !isNaN(serverMax)) ? serverMax : defaultMax;
+      if (minVal < overallMin) minVal = overallMin;
+      if (maxVal > overallMax) maxVal = overallMax;
+      if (minVal > maxVal) {
+        // swap if user accidentally provided inverted bounds
+        var t = minVal; minVal = maxVal; maxVal = t;
       }
-    });
-    $( "#amount" ).val( "$" + $( "#slider-range" ).slider( "values", 0 ) +
-      " - $" + $( "#slider-range" ).slider( "values", 1 ) );
-    $("#min_price").val($( "#slider-range" ).slider( "values", 0 ));
-    $("#max_price").val($( "#slider-range" ).slider( "values", 1 ));
+
+      $( "#slider-range" ).slider({
+        range: true,
+        min: overallMin,
+        max: overallMax,
+        values: [ minVal, maxVal ],
+        slide: function( event, ui ) {
+          $( "#amount" ).val( currency + ui.values[ 0 ] + " - " + currency + ui.values[ 1 ] );
+          // update hidden min/max fields for search (sidebar + top form)
+          $("#min_price").val(ui.values[0]);
+          $("#max_price").val(ui.values[1]);
+          try { $("#top_min_price").val(ui.values[0]); } catch(e) {}
+          try { $("#top_max_price").val(ui.values[1]); } catch(e) {}
+        }
+      });
+
+      $( "#amount" ).val( currency + $( "#slider-range" ).slider( "values", 0 ) +
+        " - " + currency + $( "#slider-range" ).slider( "values", 1 ) );
+      var v0 = $( "#slider-range" ).slider( "values", 0 );
+      var v1 = $( "#slider-range" ).slider( "values", 1 );
+      $("#min_price").val(v0);
+      $("#max_price").val(v1);
+      try { $("#top_min_price").val(v0); } catch(e) {}
+      try { $("#top_max_price").val(v1); } catch(e) {}
+    } catch(e) {
+      // If slider plugin isn't available or any error occurs, fail silently
+      try { $("#amount").val( (window.__PRICE_FILTER && window.__PRICE_FILTER.currency ? window.__PRICE_FILTER.currency : '€') + '80 - ' + (window.__PRICE_FILTER && window.__PRICE_FILTER.currency ? window.__PRICE_FILTER.currency : '€') + '300' ); } catch(_) {}
+    }
   } );
 
   // service grid and list view

@@ -18,8 +18,7 @@
     <link href="assets/css/main.css" rel="stylesheet" />
   </head>
   <body>
-    {% include 'partials/navbar.html' %}
- {% include 'partials/flash.html' %}
+    {% include 'partials/navbar.html' %} {% include 'partials/flash.html' %}
 
     <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
       <div class="container">
@@ -65,9 +64,7 @@
                       <div class="col-lg-6">
                         <div class="form-group form-check">
                           <input class="form-check-input extra-checkbox" id="extra_{{ e.id }}" type="checkbox" name="extras" value="{{ e.id }}" data-daily-price="{{ e.dailyPrice }}" />
-                          <label class="form-check-label" for="extra_{{ e.id }}">
-                            {{ e.name }}{% if e.dailyPrice > 0 %} — {{ e.dailyPrice }}€/dia{% endif %}
-                          </label>
+                          <label class="form-check-label" for="extra_{{ e.id }}"> {{ e.name }}{% if e.dailyPrice > 0 %} — {{ e.dailyPrice }}€/dia{% endif %} </label>
                         </div>
                       </div>
                       {% endfor %}
@@ -89,25 +86,23 @@
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-clock-o"></i>
-                      <label style="display:none">Hora de levantamento</label>
+                      <label style="display: none">Hora de levantamento</label>
                       <input class="form-control has-icon timepicker" name="startTime" placeholder="Hora de levantamento" type="text" value="{{ startTime or '' }}" />
-                      <small style="display:block;color:#666;margin-top:6px;">
+                      <small style="display: block; color: #666; margin-top: 6px">
                         <i class="fa fa-info-circle" title="A hora determina o instante exato de início; a disponibilidade é calculada por data+hora."></i>
                         &nbsp;Indique a hora (ex.: 12:35 PM).
                       </small>
                     </div>
-                    <div class="col-12" style="font-size:13px;color:#666;margin-top:8px;">
-                      <strong>Nota:</strong> As horas afetam disponibilidade — indique a hora de início e fim para verificar corretamente sobreposições.
-                    </div>
+                    <div class="col-12" style="font-size: 13px; color: #666; margin-top: 8px"><strong>Nota:</strong> As horas afetam disponibilidade — indique a hora de início e fim para verificar corretamente sobreposições.</div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-calendar"></i>
                       <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" value="{{ endDate or '' }}" />
                     </div>
                     <div class="form-group col-md-6">
                       <i class="fa fa-clock-o"></i>
-                      <label style="display:none">Hora de entrega</label>
+                      <label style="display: none">Hora de entrega</label>
                       <input class="form-control has-icon timepicker" name="endTime" placeholder="Hora de entrega" type="text" value="{{ endTime or '' }}" />
-                      <small style="display:block;color:#666;margin-top:6px;">
+                      <small style="display: block; color: #666; margin-top: 6px">
                         <i class="fa fa-info-circle" title="A hora determina o instante exato de fim; a disponibilidade é calculada por data+hora."></i>
                         &nbsp;Indique a hora (ex.: 12:35 PM).
                       </small>
@@ -163,71 +158,43 @@
                         <textarea name="notes" class="form-control" placeholder="Escreva informação adicional aqui"></textarea>
                       </div>
                       <div class="col-lg-12">
-                        <div style="margin-bottom:14px;color:#666;font-size:14px;">Total estimado: <strong id="reservation-total_inline">0.00</strong>€</div>
+                        <div style="margin-bottom: 14px; color: #666; font-size: 14px">Total estimado: <strong id="reservation-total_inline">0.00</strong>€</div>
                         <button class="cmn-btn bg-black" type="reset">Cancelar</button>
                         {% if vehicle and not vehicle_available %}
                         <button class="cmn-btn" type="button" disabled>Indisponível</button>
                         <div class="text-danger mt-2">Veículo indisponível para as datas selecionadas.</div>
-                        {% else %}
-                        {% if is_logged_in %}
+                        {% else %} {% if is_logged_in %}
                         <button class="cmn-btn" type="submit">reserva</button>
                         {% else %}
                         <a class="cmn-btn" href="{{ url_for('users.login') }}">reserva</a>
-                        {% endif %}
-                        {% endif %}
+                        {% endif %} {% endif %}
                       </div>
                     </div>
                   </div>
-
                 </form>
-
               </div>
             </div>
           </div>
 
           <div class="col-lg-4">
             <aside class="sidebar">
-              <div class="widget" style="border:1px solid #eee;padding:18px;border-radius:8px;">
+              <div class="widget" style="border: 1px solid #eee; padding: 18px; border-radius: 8px">
                 <h4 class="widget-title">Resumo da reserva</h4>
-                <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display: flex; flex-direction: column; gap: 10px">
                   <div>
                     <strong>{{ vehicle.brand.name if vehicle and vehicle.brand else '' }} {{ vehicle.model if vehicle else 'Veículo' }}</strong>
-                    <div style="color:#666;font-size:13px;">{{ vehicle_desc or '' }}</div>
+                    <div style="color: #666; font-size: 13px">{{ vehicle_desc or '' }}</div>
                   </div>
-                  <div style="border-top:1px dashed #eee;padding-top:10px;">
+                  <div style="border-top: 1px dashed #eee; padding-top: 10px">
                     <div>Diária: <strong>{{ vehicle.dailyRate if vehicle else '0' }}€/dia</strong></div>
                     <div>Dias: <strong id="reservation-days">0</strong></div>
-                    <div style="font-size:18px;margin-top:8px;">Total estimado: <span id="reservation-total" style="font-size:20px;font-weight:700;color:#c82333;">0.00</span>€</div>
+                    <div style="font-size: 18px; margin-top: 8px">Total estimado: <span id="reservation-total" style="font-size: 20px; font-weight: 700; color: #c82333">0.00</span>€</div>
                   </div>
                   <a class="cmn-btn" href="{{ url_for('vehicles.list_view') }}">Ver mais carros</a>
                 </div>
               </div>
 
-              <div class="widget widget-testemunho mt-20">
-                <h4 class="widget-title">testemunho</h4>
-                <div class="widget-body">
-                  <div class="testimonial-slider owl-carousel">
-                    {% for t in testimonials %}
-                    <div class="testemunho-item">
-                      <div class="testemunho-item--header">
-                        <div class="thumb">
-                          {% if t.imageUrl %}
-                          <img alt="{{ t.name }}" src="/assets/images/{{ t.imageUrl }}" />
-                          {% endif %}
-                        </div>
-                        <div class="content">
-                          <h6 class="name">{{ t.name }}</h6>
-                          <span class="designation">{{ t.designation }}</span>
-                        </div>
-                      </div>
-                      <div class="testemunho-item--body">
-                        <p>{{ t.description }}</p>
-                      </div>
-                    </div>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
+              {% include 'partials/testimonial_slider.html' %}
             </aside>
           </div>
         </div>

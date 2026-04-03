@@ -61,23 +61,20 @@
                   <div class="row justify-content-between">
                     <div class="col-lg-4 col-md-5 col-sm-6">
                       <div class="cart-sort-field">
-                        <span class="caption">Ordenar por : </span>
-                        <select name="type_filter">
-                          <option value="">Todos os tipos</option>
-                          {% for t in types %}
-                          <option value="{{ t.id }}" {% if type_filter and type_filter == t.id %}selected{% endif %}>{{ t.name }}</option>
-                          {% endfor %}
-                        </select>
-                        <select name="brand_filter" style="margin-left:8px;">
-                          <option value="">Todas as marcas</option>
-                          {% for b in brands %}
-                          <option value="{{ b.id }}" {% if brand_filter and brand_filter == b.id %}selected{% endif %}>{{ b.name }}</option>
-                          {% endfor %}
-                        </select>
+                        <span class="caption">Filtros :</span>
                       </div>
                     </div>
-                    <div class="col-lg-7 col-md-7 col-sm-6 d-flex">
-                      <input id="car_search" name="car_search" placeholder="Pesquise o que deseja........" type="text" value="{{ search or '' }}" />
+                    <div class="col-lg-7 col-md-7 col-sm-6 d-flex" style="gap:8px;align-items:center;">
+                      <input id="car_search" name="car_search" placeholder="Pesquise o que deseja........" type="text" value="{{ search or '' }}" style="flex:1 1 auto;" />
+                      <select name="order_by" class="form-control" style="min-width:160px;">
+                        <option value="">Ordenar por...</option>
+                        <option value="price_asc" {% if request.args.get('order_by') == 'price_asc' %}selected{% endif %}>Preço: Crescente</option>
+                        <option value="price_desc" {% if request.args.get('order_by') == 'price_desc' %}selected{% endif %}>Preço: Decrescente</option>
+                        <option value="type_asc" {% if request.args.get('order_by') == 'type_asc' %}selected{% endif %}>Tipo: A → Z</option>
+                        <option value="type_desc" {% if request.args.get('order_by') == 'type_desc' %}selected{% endif %}>Tipo: Z → A</option>
+                      </select>
+                      <input type="hidden" name="min_price" id="top_min_price" value="{{ min_price or '' }}" />
+                      <input type="hidden" name="max_price" id="top_max_price" value="{{ max_price or '' }}" />
                       <button class="search-submit-btn">Pesquisar</button>
                     </div>
                   </div>
@@ -100,7 +97,7 @@
                   <div class="car-item-body">
                     <div class="content">
                       <h4 class="title">{{ v.brand }} {{ v.model }}</h4>
-                      <span class="price">{{ v.dailyRate }}€/dia</span>
+                      <span class="price">€{{ '%.0f' % v.dailyRate }} /dia</span>
                       {% if not v.available %}
                       <span style="background:#e74c3c;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;margin-left:8px;">Indisponível</span>
                       {% endif %}
@@ -129,13 +126,13 @@
               <ul class="pagination justify-content-center">
                 {% if pagination.has_prev %}
                 <li class="page-item">
-                  <a class="page-link" href="{{ url_for('vehicles.list_view', page=pagination.prev_num, car_search=search, type_filter=type_filter, category_filter=category_filter, max_price=max_price, capacity_filter=capacity_filter) }}">&laquo;</a>
+                  <a class="page-link" href="{{ url_for('vehicles.list_view', page=pagination.prev_num, car_search=search, type_filter=type_filter, category_filter=category_filter, min_price=min_price, max_price=max_price, capacity_filter=capacity_filter) }}">&laquo;</a>
                 </li>
                 {% endif %}
                 {% for p in pagination.iter_pages() %}
                   {% if p %}
                   <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('vehicles.list_view', page=p, car_search=search, type_filter=type_filter, category_filter=category_filter, max_price=max_price, capacity_filter=capacity_filter) }}">{{ p }}</a>
+                    <a class="page-link" href="{{ url_for('vehicles.list_view', page=p, car_search=search, type_filter=type_filter, category_filter=category_filter, min_price=min_price, max_price=max_price, capacity_filter=capacity_filter) }}">{{ p }}</a>
                   </li>
                   {% else %}
                   <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -143,7 +140,7 @@
                 {% endfor %}
                 {% if pagination.has_next %}
                 <li class="page-item">
-                  <a class="page-link" href="{{ url_for('vehicles.list_view', page=pagination.next_num, car_search=search, type_filter=type_filter, category_filter=category_filter, max_price=max_price, capacity_filter=capacity_filter) }}">&raquo;</a>
+                  <a class="page-link" href="{{ url_for('vehicles.list_view', page=pagination.next_num, car_search=search, type_filter=type_filter, category_filter=category_filter, min_price=min_price, max_price=max_price, capacity_filter=capacity_filter) }}">&raquo;</a>
                 </li>
                 {% endif %}
               </ul>
@@ -159,6 +156,22 @@
                   </div>
                   <form class="car-search-form" method="GET" action="{{ url_for('vehicles.list_view') }}">
                     <div class="row">
+                      <div class="col-lg-12 form-group">
+                        <select name="type_filter">
+                          <option value="">Todos os tipos</option>
+                          {% for t in types %}
+                          <option value="{{ t.id }}" {% if type_filter and type_filter == t.id %}selected{% endif %}>{{ t.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="col-lg-12 form-group">
+                        <select name="brand_filter">
+                          <option value="">Todas as marcas</option>
+                          {% for b in brands %}
+                          <option value="{{ b.id }}" {% if brand_filter and brand_filter == b.id %}selected{% endif %}>{{ b.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
                       <div class="col-lg-12 form-group">
                         <select name="category_filter">
                           <option value="">Todas as categorias</option>
@@ -218,37 +231,10 @@
                 </div>
               </div>
               <!-- widget end -->
-                </div>
-              </div>
-              <!-- widget end -->
-              <div class="widget widget-testemunho">
-                <h4 class="widget-title">testemunho</h4>
-                <div class="widget-body">
-                  <div class="testimonial-slider owl-carousel">
-                    {% for t in testimonials %}
-                    <div class="testemunho-item">
-                      <div class="testemunho-item--header">
-                        <div class="thumb">
-                          {% if t.imageUrl %}
-                          <img alt="{{ t.name }}" src="/assets/images/{{ t.imageUrl }}" />
-                          {% endif %}
-                        </div>
-                        <div class="content">
-                          <h6 class="name">{{ t.name }}</h6>
-                          <span class="designation">{{ t.designation }}</span>
-                        </div>
-                      </div>
-                      <div class="testemunho-item--body">
-                        <p>{{ t.description }}</p>
-                      </div>
-                    </div>
-                    {% endfor %}
-                  </div>
-                </div>
-              </div>
+              {# Use a reusable partial for the testimonial slider to avoid duplication #}
+              {% include 'partials/testimonial_slider.html' %}
             </aside>
               <!-- widget end -->
-            </aside>
           </div>
         </div>
       </div>
@@ -276,7 +262,33 @@
     <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
     <!-- jquery ui js link -->
     <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
-    <!-- main js link -->
+    <!-- Price filter data (keep scripts loaded once above; avoid reloading jQuery) -->
+    <script id="__PRICE_FILTER_DATA" type="application/json">
+    {{ {
+      'maxVehicle': (vehicles|map(attribute='dailyRate')|list|max) if vehicles else None,
+      'overallMax': 1000,
+      'overallMin': 0,
+      'currency': '€',
+      'defaultMin': 80,
+      'defaultMax': ((vehicles|map(attribute='dailyRate')|list|max) if vehicles else 1000)
+    } | tojson }}
+    </script>
+    <script>
+      (function(){
+        window.__PRICE_FILTER = window.__PRICE_FILTER || {};
+        try {
+          var el = document.getElementById('__PRICE_FILTER_DATA');
+          var cfg = el ? JSON.parse(el.textContent) : {};
+          window.__PRICE_FILTER.maxVehicle = (cfg.maxVehicle === undefined ? null : cfg.maxVehicle);
+          window.__PRICE_FILTER.overallMax = Number(cfg.overallMax) || 1000;
+          window.__PRICE_FILTER.overallMin = Number(cfg.overallMin) || 0;
+          window.__PRICE_FILTER.currency = cfg.currency || '€';
+          window.__PRICE_FILTER.defaultMin = Number(cfg.defaultMin) || 80;
+          window.__PRICE_FILTER.defaultMax = Math.min(Number(cfg.defaultMax) || 1000, window.__PRICE_FILTER.overallMax);
+        } catch(e) { /* ignore */ }
+      })();
+    </script>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

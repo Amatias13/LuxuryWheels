@@ -3693,22 +3693,88 @@ blockquote p {
     display: -ms-flexbox;
     display: flex;
     margin-top: 15px;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 .filter-price-result input {
-    width: 90px;
+    width: auto;
+    min-width: 140px;
     padding: 0;
     color: #14181c;
     border: none;
+    margin-right: 8px;
 }
 
 .filter-price-result span {
     color: #14181c;
+    margin-left: 6px;
+    white-space: nowrap;
 }
 
 .ui-slider-horizontal {
     height: 24px;
     border-radius: 999px;
+}
+
+/* Top filter layout: keep selects compact and allow wrapping on small screens */
+.car-search-filter-area .cart-sort-field {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.car-search-filter-area .cart-sort-field .form-control {
+    min-width: 110px !important;
+    max-width: 320px;
+}
+.car-search-filter-area .cart-sort-field .form-control[name="order_by"] {
+    min-width: 140px !important;
+}
+@media (max-width: 991px) {
+    .car-search-filter-area .cart-sort-field {
+        width: 100%;
+    }
+    .car-search-filter-area .cart-sort-field .form-control {
+        flex: 1 1 auto;
+        min-width: 0 !important;
+    }
+    .car-search-filter-form .d-flex {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Right column search + order control styling */
+.car-search-filter-form .d-flex input#car_search {
+    box-sizing: border-box;
+    padding: 12px 14px;
+    min-width: 320px;
+    max-width: 680px;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+}
+.car-search-filter-form .d-flex .form-control {
+    height: 44px;
+    padding: 8px 12px 8px 12px;
+    border: 1px solid #e5e5e5;
+    background: #fff;
+    padding-right: 28px; /* room for native dropdown arrow */
+    line-height: 1.2;
+}
+.car-search-filter-form .d-flex .search-submit-btn {
+    padding: 10px 18px;
+    height: 44px;
+    line-height: 22px;
+}
+@media (max-width: 991px) {
+    .car-search-filter-form .d-flex input#car_search {
+        min-width: 140px;
+        max-width: none;
+    }
+    .car-search-filter-form .d-flex .form-control {
+        min-width: 100px;
+    }
 }
 
 .ui-widget.ui-datepicker {

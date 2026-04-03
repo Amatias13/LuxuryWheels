@@ -1,0 +1,25 @@
+<div class="widget widget-testemunho">
+  <h4 class="widget-title">Testemunho</h4>
+  <div class="widget-body">
+    <div class="testimonial-slider owl-carousel">
+      {% for t in testimonials %}
+      <div class="item testemunho-item">
+        <div class="testemunho-item--header">
+          <div class="thumb">
+            {% if t.imageUrl %}
+            <img alt="{{ t.name }}" src="/assets/images/{{ t.imageUrl }}" />
+            {% endif %}
+          </div>
+          <div class="content">
+            <h6 class="name">{{ t.name }}</h6>
+            <span class="designation">{{ t.designation }}</span>
+          </div>
+        </div>
+        <div class="testemunho-item--body">
+          <p>{{ t.description }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
