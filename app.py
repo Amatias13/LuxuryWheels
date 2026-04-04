@@ -3,7 +3,6 @@ from flask import Flask, render_template
 from database import init_db, db
 
 app = Flask(__name__, static_folder="templates/assets", static_url_path="/assets")
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-muda-em-producao")
 
 init_db(app)
 
