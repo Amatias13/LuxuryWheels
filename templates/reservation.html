@@ -1,219 +1,662 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+<html lang="pt">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Luxury Wheels - Reserva</title>
-    <link href="assets/images/favicon.jpg" rel="shortcut icon" type="image/png" />
-    <link href="assets/css/fontawesome.min.css" rel="stylesheet" />
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="assets/css/lightcase.css" rel="stylesheet" />
-    <link href="assets/css/animate.css" rel="stylesheet" />
-    <link href="assets/css/nice-select.css" rel="stylesheet" />
-    <link href="assets/css/datepicker.min.css" rel="stylesheet" />
-    <link href="assets/css/wickedpicker.min.css" rel="stylesheet" />
-    <link href="assets/css/jquery-ui.min.css" rel="stylesheet" />
-    <link href="assets/css/owl.carousel.min.css" rel="stylesheet" />
-    <link href="assets/css/main.css" rel="stylesheet" />
-  </head>
-  <body>
-    {% include 'partials/navbar.html' %} {% include 'partials/flash.html' %}
+    <link href="assets/images/favicon.jpg" rel="shortcut icon" type="image/png"/>
+    <link href="assets/css/fontawesome.min.css" rel="stylesheet"/>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="assets/css/lightcase.css" rel="stylesheet"/>
+    <link href="assets/css/animate.css" rel="stylesheet"/>
+    <link href="assets/css/nice-select.css" rel="stylesheet"/>
+    <link href="assets/css/datepicker.min.css" rel="stylesheet"/>
+    <link href="assets/css/wickedpicker.min.css" rel="stylesheet"/>
+    <link href="assets/css/jquery-ui.min.css" rel="stylesheet"/>
+    <link href="assets/css/owl.carousel.min.css" rel="stylesheet"/>
+    <link href="assets/css/main.css" rel="stylesheet"/>
 
-    <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <h2 class="page-title">reserva</h2>
-            <ol class="page-list">
-              <li>
-                <a href="{{ url_for('home') }}"><i class="fa fa-home"></i>Início</a>
-              </li>
-              <li><a href="#0">lista de carros</a></li>
-              <li>reserva</li>
-            </ol>
-          </div>
+    <style>
+        :root {
+          --red:      #da1c36;
+          --red-dark: #b81529;
+          --dark:     #14181c;
+          --gray-bg:  #f7f7f7;
+          --gray-2:   #eeeeee;
+          --border:   #e0e0e0;
+          --text:     #333333;
+          --muted:    #777777;
+          --white:    #ffffff;
+          --radius:   4px;
+          --shadow:   0 2px 16px rgba(0,0,0,0.07);
+        }
+
+        body { background: var(--gray-bg); color: var(--text); }
+        .inner-page-banner { padding-top: 120px; padding-bottom: 60px; }
+        .reservation-section { padding: 60px 0 80px; }
+
+        /* ── Car hero ── */
+        .car-hero {
+          border-radius: var(--radius);
+          overflow: hidden;
+          box-shadow: var(--shadow);
+          margin-bottom: 24px;
+          position: relative;
+          background: var(--dark);
+        }
+        .car-hero img { width: 100%; height: 300px; object-fit: cover; display: block; opacity: .88; transition: opacity .35s; }
+        .car-hero:hover img { opacity: 1; }
+        .car-hero-info {
+          position: absolute; bottom: 0; left: 0; right: 0;
+          padding: 60px 24px 22px;
+          background: linear-gradient(to top, rgba(20,24,28,.95) 0%, transparent 100%);
+        }
+        .car-badge {
+          display: inline-block; background: var(--red); color: #fff;
+          font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+          text-transform: uppercase; padding: 3px 10px; border-radius: 2px; margin-bottom: 8px;
+        }
+        .car-hero-info h2 {
+          color: #fff; font-size: 1.55rem; font-weight: 700; margin: 0 0 4px;
+          font-family: 'Raleway', sans-serif; text-transform: capitalize;
+        }
+        .car-meta { color: rgba(255,255,255,.65); font-size: 13px; margin: 0; }
+        .car-meta strong { color: var(--red); }
+
+        /* ── Step cards ──
+           FIX: removido overflow:hidden para não cortar o dropdown do nice-select.
+           O border-radius continua a funcionar nos cantos do card. */
+        .step-card {
+          background: var(--white); border: 1px solid var(--border);
+          border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px;
+          /* overflow: hidden  ← REMOVIDO: estava a cortar a lista do nice-select */
+        }
+        .step-card-header {
+          display: flex; align-items: center; gap: 14px;
+          padding: 16px 22px; border-bottom: 2px solid var(--gray-2);
+        }
+        .step-num {
+          width: 28px; height: 28px; border-radius: 50%; background: var(--red);
+          color: #fff; font-size: 12px; font-weight: 700;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .step-card-header h3 {
+          font-size: 14px; font-weight: 700; font-family: 'Raleway', sans-serif;
+          color: var(--dark); margin: 0; text-transform: capitalize; letter-spacing: .3px;
+        }
+        .step-card-body {
+          padding: 22px;
+          overflow: visible !important; /* FIX: garante que o dropdown não é cortado */
+        }
+
+        /* ── Fields ── */
+        .field-wrap {
+          position: relative;
+          margin-bottom: 14px;
+          overflow: visible !important; /* FIX: não cortar o dropdown */
+        }
+        .field-icon {
+          position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+          color: var(--red); font-size: 12px; pointer-events: none; z-index: 5;
+        }
+        .field-icon.top { top: 13px; transform: none; }
+
+        /* Override native inputs */
+        .reservation-form .field-wrap input,
+        .reservation-form .field-wrap textarea {
+          width: 100%; padding: 11px 14px 11px 36px !important;
+          border: 1px solid var(--border) !important; border-radius: var(--radius) !important;
+          background: var(--white) !important; color: var(--text) !important;
+          font-family: 'Roboto', sans-serif; font-size: 13px;
+          transition: border-color .2s, box-shadow .2s;
+          box-shadow: none !important;
+        }
+        .reservation-form .field-wrap input::placeholder,
+        .reservation-form .field-wrap textarea::placeholder { color: #bbb !important; }
+        .reservation-form .field-wrap input:focus,
+        .reservation-form .field-wrap textarea:focus {
+          border-color: var(--red) !important;
+          box-shadow: 0 0 0 3px rgba(218,28,54,.08) !important;
+          outline: none !important;
+        }
+        .reservation-form .field-wrap textarea { min-height: 110px; resize: vertical; padding-top: 11px !important; }
+
+        /* ── Nice-select overrides ── */
+        .reservation-form .field-wrap .nice-select {
+          width: 100% !important;
+          padding-left: 36px !important;
+          padding-right: 30px !important;
+          border: 1px solid var(--border) !important;
+          border-radius: var(--radius) !important;
+          background-color: var(--white) !important;
+          color: var(--text) !important;
+          font-family: 'Roboto', sans-serif !important;
+          font-size: 13px !important;
+          height: 42px !important;
+          line-height: 40px !important;
+          float: none !important;
+          transition: border-color .2s, box-shadow .2s !important;
+        }
+        .reservation-form .field-wrap .nice-select:focus,
+        .reservation-form .field-wrap .nice-select.open {
+          border-color: var(--red) !important;
+          box-shadow: 0 0 0 3px rgba(218,28,54,.08) !important;
+        }
+        .reservation-form .field-wrap .nice-select .current { color: var(--text); }
+
+        /* FIX: z-index alto para o dropdown aparecer por cima de tudo */
+        .reservation-form .field-wrap .nice-select .list {
+          width: 100% !important;
+          border: 1px solid var(--border) !important;
+          border-radius: var(--radius) !important;
+          box-shadow: var(--shadow) !important;
+          margin-top: 2px !important;
+          z-index: 9999 !important;  /* FIX: garante que fica por cima de outros elementos */
+          position: absolute !important;
+        }
+        .reservation-form .field-wrap .nice-select .option { font-size: 13px; }
+        .reservation-form .field-wrap .nice-select .option.selected,
+        .reservation-form .field-wrap .nice-select .option:hover { color: var(--red) !important; }
+        .reservation-form .field-wrap .nice-select:after {
+          border-bottom-color: var(--muted) !important;
+          border-right-color: var(--muted) !important;
+          right: 14px !important;
+        }
+        /* Placeholder option color */
+        .reservation-form .field-wrap .nice-select .current:empty::before,
+        .reservation-form .field-wrap .nice-select .placeholder { color: #bbb !important; }
+
+        .field-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+        .field-hint i { color: var(--red); }
+
+        /* ── Datetime grid ── */
+        .dt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media(max-width:576px){ .dt-grid { grid-template-columns: 1fr; } }
+        .dt-group-label {
+          font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+          font-weight: 700; color: var(--red); margin-bottom: 10px;
+          display: flex; align-items: center; gap: 8px;
+        }
+        .dt-group-label::after { content:''; flex:1; height:1px; background: var(--gray-2); }
+
+        /* ── Extras ── */
+        .extras-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media(max-width:576px){ .extras-grid { grid-template-columns: 1fr; } }
+        .extra-card {
+          display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+          border: 1px solid var(--border); border-radius: var(--radius); background: var(--white);
+          cursor: pointer; transition: border-color .2s, background .2s, box-shadow .2s; user-select: none;
+        }
+        .extra-card:hover { border-color: var(--red); background: #fff5f6; }
+        .extra-card:has(.extra-cb:checked) { border-color: var(--red); background: #fff0f2; box-shadow: 0 0 0 2px rgba(218,28,54,.1); }
+        .extra-cb { display: none; }
+        .extra-check {
+          width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 3px; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent; transition: all .2s;
+        }
+        .extra-card:has(.extra-cb:checked) .extra-check { background: var(--red); border-color: var(--red); color: #fff; }
+        .extra-name { font-size: 13px; font-weight: 500; flex: 1; }
+        .extra-price { font-size: 12px; color: var(--red); font-weight: 700; white-space: nowrap; }
+
+        /* ── Buttons ── */
+        .btn-res {
+          display: inline-flex; align-items: center; gap: 8px; padding: 12px 26px;
+          border-radius: var(--radius); font-family: 'Raleway', sans-serif;
+          font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: capitalize;
+          border: none; cursor: pointer; transition: all .25s; text-decoration: none;
+        }
+        .btn-res-primary { background: var(--red); color: #fff; }
+        .btn-res-primary:hover { background: var(--red-dark); color: #fff; }
+        .btn-res-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn-res-outline:hover { border-color: var(--dark); color: var(--dark); }
+        .btn-res:disabled { background: var(--gray-2) !important; color: var(--muted) !important; cursor: not-allowed; border: 1px solid var(--border); }
+        .btn-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+
+        /* Unavailable */
+        .unavailable-notice {
+          background: #fff5f6; border: 1px solid rgba(218,28,54,.2); border-left: 4px solid var(--red);
+          border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--red);
+          margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar-sticky { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+        .summary-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .summary-header { background: var(--dark); padding: 18px 20px; display: flex; align-items: center; gap: 12px; }
+        .s-icon { width: 36px; height: 36px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; flex-shrink: 0; }
+        .summary-header h4 { color: #fff; font-family: 'Raleway', sans-serif; font-size: 15px; font-weight: 700; margin: 0; text-transform: capitalize; }
+        .s-sub { color: rgba(255,255,255,.45); font-size: 11px; margin-top: 1px; }
+
+        .s-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--gray-2); font-size: 13px; }
+        .s-row:last-child { border-bottom: none; }
+        .s-label { color: var(--muted); }
+        .s-value { font-weight: 600; color: var(--dark); }
+
+        .summary-total-row {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 14px 20px; background: #fff8f9; border-top: 2px solid var(--red);
+        }
+        .t-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+        .t-value {
+          font-family: 'Raleway', sans-serif; font-size: 1.7rem; font-weight: 900;
+          color: var(--red); line-height: 1; display: flex; align-items: baseline; gap: 3px;
+        }
+        .t-currency { font-size: 1rem; }
+
+        .more-cars-card {
+          background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+          box-shadow: var(--shadow); padding: 14px 18px;
+          display: flex; align-items: center; justify-content: space-between;
+          text-decoration: none; color: var(--text); transition: border-color .2s, box-shadow .2s;
+        }
+        .more-cars-card:hover { border-color: var(--red); box-shadow: 0 4px 20px rgba(218,28,54,.1); color: var(--red); }
+        .more-cars-card span { font-size: 13px; font-weight: 600; font-family: 'Raleway', sans-serif; }
+        .arrow-icon { transition: transform .2s; }
+        .more-cars-card:hover .arrow-icon { transform: translateX(4px); }
+
+        .widget-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+        .widget-header { padding: 12px 18px; border-bottom: 1px solid var(--gray-2); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; color: var(--red); }
+        .widget-body { padding: 14px 18px; }
+
+        /* ── Flash modal ── */
+        .flash-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 9999; display: flex; align-items: center; justify-content: center; animation: fdIn .2s; }
+        .flash-box { background: var(--white); border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,.2); padding: 36px; max-width: 420px; width: 90%; text-align: center; position: relative; }
+        .flash-box .f-icon { font-size: 2.5rem; margin-bottom: 14px; }
+        .flash-box .f-icon.err { color: var(--red); }
+        .flash-box .f-icon.ok { color: #27ae60; }
+        .flash-box h4 { font-family: 'Raleway', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+        .flash-box p { font-size: 14px; color: var(--muted); margin-bottom: 22px; }
+        .flash-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
+        @keyframes fdIn { from{opacity:0} to{opacity:1} }
+
+        /* ── Responsive ── */
+        @media(max-width: 991px) {
+          .sidebar-sticky { position: static; }
+          .car-hero { margin-bottom: 16px; }
+        }
+    </style>
+</head>
+
+<body>
+{% include 'partials/navbar.html' %}
+
+<!-- Flash -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for cat, msg in messages %}
+<div class="flash-overlay">
+    <div class="flash-box">
+        <button class="flash-close" onclick="this.closest('.flash-overlay').remove()">×</button>
+        <div class="f-icon {{ 'err' if 'error' in cat else 'ok' }}">
+            <i class="fa {{ 'fa-times-circle' if 'error' in cat else 'fa-check-circle' }}"></i>
         </div>
-      </div>
-    </section>
+        <h4>{{ 'Erro' if 'error' in cat else 'Sucesso' }}</h4>
+        <p>{{ msg }}</p>
+        <button class="btn-res btn-res-primary" onclick="this.closest('.flash-overlay').remove()">Fechar</button>
+    </div>
+</div>
+{% endfor %}{% endif %}
+{% endwith %}
 
-    <section class="reserva-section pt-120 pb-120">
-      <div class="container">
+<!-- Banner -->
+<section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
+    <div class="container">
         <div class="row">
-          <div class="col-lg-8">
-            <div class="reserva-details-area">
-              <div class="thumb">
-                <img alt="images" src="{{ url_for('static', filename='images/cars/' ~ (vehicle.imageUrl or 'b1.jpg')) }}" />
-              </div>
-              <div class="content">
-                <div class="content-block">
-                  <h3 class="car-name">{{ vehicle.model if vehicle else 'Carro' }}</h3>
-                  <span class="price">A partir de {{ vehicle.dailyRate if vehicle else 'N/A' }}€/dia</span>
-                  <p>{{ vehicle_desc or 'Detalhes do carro' }}</p>
-                </div>
-
-                <form class="reserva-form" method="post" action="{{ url_for('reservations.reserve') }}" data-daily-rate="{{ vehicle.dailyRate if vehicle else 0 }}" novalidate>
-                  <!-- Hidden field to reliably expose logged-in user id to client JS -->
-                  <input type="hidden" id="client-current-user" name="client_current_user" value="{{ '1' if is_logged_in else '' }}" />
-                  <input type="hidden" name="vehicle_id" value="{{ vehicle.idVehicle if vehicle else '' }}" />
-
-                  <div class="content-block">
-                    <h3 class="title">benefícios e taxas extra</h3>
-                    <div class="row">
-                      {% for e in extras %}
-                      <div class="col-lg-6">
-                        <div class="form-group form-check">
-                          <input class="form-check-input extra-checkbox" id="extra_{{ e.id }}" type="checkbox" name="extras" value="{{ e.id }}" data-daily-price="{{ e.dailyPrice }}" />
-                          <label class="form-check-label" for="extra_{{ e.id }}"> {{ e.name }}{% if e.dailyPrice > 0 %} — {{ e.dailyPrice }}€/dia{% endif %} </label>
-                        </div>
-                      </div>
-                      {% endfor %}
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-map-marker"></i>
-                      <input class="form-control has-icon" name="startLocation" placeholder="Local de levantamento" type="text" />
-                    </div>
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-map-marker"></i>
-                      <input class="form-control has-icon" name="endLocation" placeholder="Local de entrega" type="text" />
-                    </div>
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-calendar"></i>
-                      <input class="form-control has-icon datepicker-here" data-language="pt" name="startDate" id="startDate" placeholder="Data de levantamento" type="text" value="{{ startDate or '' }}" />
-                    </div>
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-clock-o"></i>
-                      <label style="display: none">Hora de levantamento</label>
-                      <input class="form-control has-icon timepicker" name="startTime" placeholder="Hora de levantamento" type="text" value="{{ startTime or '' }}" />
-                      <small style="display: block; color: #666; margin-top: 6px">
-                        <i class="fa fa-info-circle" title="A hora determina o instante exato de início; a disponibilidade é calculada por data+hora."></i>
-                        &nbsp;Indique a hora (ex.: 12:35 PM).
-                      </small>
-                    </div>
-                    <div class="col-12" style="font-size: 13px; color: #666; margin-top: 8px"><strong>Nota:</strong> As horas afetam disponibilidade — indique a hora de início e fim para verificar corretamente sobreposições.</div>
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-calendar"></i>
-                      <input class="form-control has-icon datepicker-here" data-language="pt" name="endDate" id="endDate" placeholder="Data de entrega" type="text" value="{{ endDate or '' }}" />
-                    </div>
-                    <div class="form-group col-md-6">
-                      <i class="fa fa-clock-o"></i>
-                      <label style="display: none">Hora de entrega</label>
-                      <input class="form-control has-icon timepicker" name="endTime" placeholder="Hora de entrega" type="text" value="{{ endTime or '' }}" />
-                      <small style="display: block; color: #666; margin-top: 6px">
-                        <i class="fa fa-info-circle" title="A hora determina o instante exato de fim; a disponibilidade é calculada por data+hora."></i>
-                        &nbsp;Indique a hora (ex.: 12:35 PM).
-                      </small>
-                    </div>
-                  </div>
-
-                  <div class="content-block">
-                    <h3 class="title">informação pessoal</h3>
-                    <div class="row">
-                      <div class="col-lg-6 form-group">
-                        <input name="name" placeholder="Nome" type="text" required />
-                      </div>
-                      <div class="col-lg-6 form-group">
-                        <input name="email" placeholder="Endereço de email" type="email" required />
-                      </div>
-                      <div class="col-lg-6 form-group">
-                        <input name="phone" placeholder="Telefone" type="tel" />
-                      </div>
-                      <div class="col-lg-6 form-group">
-                        <input name="city" placeholder="Cidade" type="text" />
-                      </div>
-                      <div class="col-lg-6 form-group">
-                        <input name="postal_code" placeholder="Código Postal" type="text" />
-                      </div>
-                      <div class="col-lg-6 form-group">
-                        <select name="gender">
-                          <option>Género</option>
-                          <option>Masculino</option>
-                          <option>Feminino</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="content-block">
-                    <h3 class="title">método de pagamento</h3>
-                    <div class="row">
-                      <div class="col-lg-6 form-group">
-                        <select name="idPaymentMethod">
-                          <option value="">Selecionar método de pagamento</option>
-                          {% for pm in payment_methods %}
-                          <option value="{{ pm.id }}">{{ pm.methodName }}</option>
-                          {% endfor %}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="content-block">
-                    <h3 class="title">informação adicional</h3>
-                    <div class="row">
-                      <div class="col-lg-12 form-group">
-                        <textarea name="notes" class="form-control" placeholder="Escreva informação adicional aqui"></textarea>
-                      </div>
-                      <div class="col-lg-12">
-                        <div style="margin-bottom: 14px; color: #666; font-size: 14px">Total estimado: <strong id="reservation-total_inline">0.00</strong>€</div>
-                        <button class="cmn-btn bg-black" type="reset">Cancelar</button>
-                        {% if vehicle and not vehicle_available %}
-                        <button class="cmn-btn" type="button" disabled>Indisponível</button>
-                        <div class="text-danger mt-2">Veículo indisponível para as datas selecionadas.</div>
-                        {% else %} {% if is_logged_in %}
-                        <button class="cmn-btn" type="submit">reserva</button>
-                        {% else %}
-                        <a class="cmn-btn" href="{{ url_for('users.login') }}">reserva</a>
-                        {% endif %} {% endif %}
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
+            <div class="col-md-12">
+                <h2 class="page-title">Reserva</h2>
+                <ol class="page-list">
+                    <li><a href="{{ url_for('home') }}"><i class="fa fa-home"></i>Início</a></li>
+                    <li><a href="{{ url_for('vehicles.list_view') }}">Lista de Carros</a></li>
+                    <li>Reserva</li>
+                </ol>
             </div>
-          </div>
-
-          <div class="col-lg-4">
-            <aside class="sidebar">
-              <div class="widget" style="border: 1px solid #eee; padding: 18px; border-radius: 8px">
-                <h4 class="widget-title">Resumo da reserva</h4>
-                <div style="display: flex; flex-direction: column; gap: 10px">
-                  <div>
-                    <strong>{{ vehicle.brand.name if vehicle and vehicle.brand else '' }} {{ vehicle.model if vehicle else 'Veículo' }}</strong>
-                    <div style="color: #666; font-size: 13px">{{ vehicle_desc or '' }}</div>
-                  </div>
-                  <div style="border-top: 1px dashed #eee; padding-top: 10px">
-                    <div>Diária: <strong>{{ vehicle.dailyRate if vehicle else '0' }}€/dia</strong></div>
-                    <div>Dias: <strong id="reservation-days">0</strong></div>
-                    <div style="font-size: 18px; margin-top: 8px">Total estimado: <span id="reservation-total" style="font-size: 20px; font-weight: 700; color: #c82333">0.00</span>€</div>
-                  </div>
-                  <a class="cmn-btn" href="{{ url_for('vehicles.list_view') }}">Ver mais carros</a>
-                </div>
-              </div>
-
-              {% include 'partials/testimonial_slider.html' %}
-            </aside>
-          </div>
         </div>
-      </div>
-    </section>
+    </div>
+</section>
 
-    {% include 'partials/footer.html' %}
+<section class="reservation-section">
+    <div class="container">
+        <div class="row">
 
-    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  </body>
+            <!-- SIDEBAR -->
+            <div class="col-lg-4 order-lg-2 order-1 mb-4 mb-lg-0">
+                <div class="sidebar-sticky">
+
+                    <!-- Car hero -->
+                    <div class="car-hero">
+                        <img alt="{{ vehicle.model if vehicle else 'Veículo' }}"
+                             src="{{ url_for('static', filename='images/cars/' ~ (vehicle.imageUrl or 'b1.jpg')) }}"/>
+                        <div class="car-hero-info">
+                            {% if vehicle %}
+                            <span class="car-badge">{{ vehicle.vtype.name if vehicle.vtype else 'Veículo' }}</span>
+                            {% endif %}
+                            <h2>{{ vehicle.brand.name if vehicle and vehicle.brand else '' }} {{ vehicle.model if
+                                vehicle else 'Selecione um veículo' }}</h2>
+                            <p class="car-meta">
+                                {% if vehicle %}
+                                {{ vehicle.category.name if vehicle.category else '' }} &nbsp;·&nbsp;
+                                {{ vehicle.capacity }} pessoas &nbsp;·&nbsp;
+                                <strong>{{ vehicle.dailyRate }}€ / dia</strong>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="summary-card">
+                        <div class="summary-header">
+                            <div class="s-icon"><i class="fa fa-file-text-o"></i></div>
+                            <div>
+                                <h4>Resumo da reserva</h4>
+                                <p class="s-sub">Atualizado em tempo real</p>
+                            </div>
+                        </div>
+                        <div>
+                            {% if vehicle %}
+                            <div class="s-row"><span class="s-label">Veículo</span><span class="s-value">{{ vehicle.brand.name if vehicle.brand else '' }} {{ vehicle.model }}</span>
+                            </div>
+                            <div class="s-row"><span class="s-label">Tarifa diária</span><span class="s-value">{{ vehicle.dailyRate }}€</span>
+                            </div>
+                            {% endif %}
+                            <div class="s-row"><span class="s-label">Dias</span><span class="s-value"
+                                                                                      id="reservation-days">—</span>
+                            </div>
+                            <div class="s-row"><span class="s-label">Extras</span><span class="s-value"
+                                                                                        id="extras-total-display">0.00€</span>
+                            </div>
+                        </div>
+                        <div class="summary-total-row">
+                            <span class="t-label">Total estimado</span>
+                            <span class="t-value">
+                    <span class="t-currency">€</span><span id="reservation-total">0.00</span>
+                  </span>
+                        </div>
+                    </div>
+
+                    <!-- More cars -->
+                    <a class="more-cars-card" href="{{ url_for('vehicles.list_view') }}">
+                        <span><i class="fa fa-th-large" style="margin-right:8px;color:var(--red)"></i>Ver mais veículos</span>
+                        <i class="fa fa-arrow-right arrow-icon"></i>
+                    </a>
+
+                    <!-- Testimonials -->
+                    <div class="widget-card">
+                        <div class="widget-header">O que dizem os clientes</div>
+                        <div class="widget-body">
+                            {% include 'partials/testimonial_slider.html' %}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- FORM -->
+            <div class="col-lg-8 order-lg-1 order-2">
+
+                <form class="reservation-form" method="post" action="{{ url_for('reservations.reserve') }}"
+                      data-daily-rate="{{ vehicle.dailyRate if vehicle else 0 }}" novalidate>
+                    <input type="hidden" id="client-current-user" name="client_current_user"
+                           value="{{ '1' if is_logged_in else '' }}"/>
+                    <input type="hidden" name="vehicle_id" value="{{ vehicle.idVehicle if vehicle else '' }}"/>
+
+                    <!-- Step 1: Período -->
+                    <div class="step-card">
+                        <div class="step-card-header">
+                            <div class="step-num">1</div>
+                            <h3>Período de aluguer</h3>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="dt-grid">
+                                <div>
+                                    <p class="dt-group-label"><i class="fa fa-sign-out"></i>Levantamento</p>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-calendar"></i>
+                                        <input class="datepicker-here" data-language="pt" name="startDate"
+                                               id="startDate"
+                                               placeholder="Data de levantamento" type="text"
+                                               value="{{ startDate or '' }}"
+                                               data-min-date="{{ now().strftime('%d/%m/%Y') }}"
+                                        />
+                                    </div>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-clock-o"></i>
+                                        <input class="timepicker" name="startTime" placeholder="Hora (ex: 10:00 AM)"
+                                               type="text" value="{{ startTime or '' }}"
+                                               data-min-date="{{ now().strftime('%d/%m/%Y') }}"
+                                        />
+                                    </div>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-map-marker"></i>
+                                        <input name="startLocation" placeholder="Local de levantamento" type="text"/>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="dt-group-label"><i class="fa fa-sign-in"></i>Entrega</p>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-calendar"></i>
+                                        <input class="datepicker-here" data-language="pt" name="endDate" id="endDate"
+                                               placeholder="Data de entrega" type="text" value="{{ endDate or '' }}"/>
+                                    </div>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-clock-o"></i>
+                                        <input class="timepicker" name="endTime" placeholder="Hora (ex: 10:00 AM)"
+                                               type="text" value="{{ endTime or '' }}"/>
+                                    </div>
+                                    <div class="field-wrap">
+                                        <i class="field-icon fa fa-map-marker"></i>
+                                        <input name="endLocation" placeholder="Local de entrega" type="text"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="field-hint">
+                                <i class="fa fa-info-circle"></i>
+                                A hora influencia a disponibilidade — o veículo é reservado para o intervalo exato
+                                (data+hora).
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Extras -->
+                    {% if extras %}
+                    <div class="step-card">
+                        <div class="step-card-header">
+                            <div class="step-num">2</div>
+                            <h3>Serviços adicionais</h3>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="extras-grid">
+                                {% for e in extras %}
+                                <label class="extra-card">
+                                    <input class="extra-cb" type="checkbox" name="extras" value="{{ e.id }}"
+                                           data-daily-price="{{ e.dailyPrice }}"/>
+                                    <div class="extra-check"><i class="fa fa-check"></i></div>
+                                    <span class="extra-name">{{ e.name }}</span>
+                                    {% if e.dailyPrice > 0 %}<span class="extra-price">+{{ e.dailyPrice }}€/dia</span>{%
+                                    endif %}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Step 3: Info pessoal -->
+                    <div class="step-card">
+                        <div class="step-card-header">
+                            <div class="step-num">{{ '3' if extras else '2' }}</div>
+                            <h3>Informação pessoal</h3>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="dt-grid">
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-user"></i>
+                                    <input name="name" placeholder="Nome completo" type="text" required/>
+                                </div>
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-envelope"></i>
+                                    <input name="email" placeholder="Endereço de email" type="email" required/>
+                                </div>
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-phone"></i>
+                                    <input name="phone" placeholder="Telefone" type="tel"/>
+                                </div>
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-building"></i>
+                                    <input name="city" placeholder="Cidade" type="text"/>
+                                </div>
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-hashtag"></i>
+                                    <input name="postal_code" placeholder="Código Postal" type="text"/>
+                                </div>
+                                <!-- Género -->
+                                <div class="field-wrap">
+                                    <i class="field-icon fa fa-venus-mars"></i>
+                                    <select name="gender">
+                                        <option value="">Género</option>
+                                        <option>Masculino</option>
+                                        <option>Feminino</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Pagamento -->
+                    <div class="step-card">
+                        <div class="step-card-header">
+                            <div class="step-num">{{ '4' if extras else '3' }}</div>
+                            <h3>Método de pagamento</h3>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="field-wrap" style="max-width:100%">
+                                <i class="field-icon fa fa-credit-card"></i>
+                                <select name="idPaymentMethod">
+                                    <option value="">Selecionar método de pagamento</option>
+                                    {% for pm in payment_methods %}
+                                    <option value="{{ pm.id }}">{{ pm.methodName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Notas + submit -->
+                    <div class="step-card">
+                        <div class="step-card-header">
+                            <div class="step-num">{{ '5' if extras else '4' }}</div>
+                            <h3>Informação adicional</h3>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="field-wrap">
+                                <i class="field-icon top fa fa-comment"></i>
+                                <textarea name="notes" placeholder="Pedidos especiais, observações..."></textarea>
+                            </div>
+
+                            {% if vehicle and not vehicle_available %}
+                            <div class="unavailable-notice">
+                                <i class="fa fa-ban"></i>
+                                Veículo indisponível para as datas selecionadas. Escolha outro período.
+                            </div>
+                            <div class="btn-actions">
+                                <button class="btn-res" type="button" disabled><i class="fa fa-lock"></i> Indisponível
+                                </button>
+                                <button class="btn-res btn-res-outline" type="reset">Limpar</button>
+                            </div>
+                            {% else %}
+                            <div class="btn-actions">
+                                {% if is_logged_in %}
+                                <button class="btn-res btn-res-primary" type="submit">
+                                    <i class="fa fa-check"></i> Confirmar reserva
+                                </button>
+                                {% else %}
+                                <a class="btn-res btn-res-primary" href="{{ url_for('users.login') }}">
+                                    <i class="fa fa-sign-in"></i> Entrar para reservar
+                                </a>
+                                {% endif %}
+                                <button class="btn-res btn-res-outline" type="reset">Cancelar</button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% include 'partials/footer.html' %}
+
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
+<script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
+<script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<script>
+    $(document).ready(function() {
+      $('.reservation-form .field-wrap .nice-select').addClass('wide');
+    });
+
+    // ── Total calculator ──
+    const DAILY_RATE = parseFloat('{{ vehicle.dailyRate if vehicle else 0 }}') || 0;
+
+    function parsePtDate(s) {
+      if (!s) return null;
+      const p = s.split(/[-\/]/);
+      if (p.length === 3 && p[2].length === 4) return new Date(+p[2], p[1]-1, +p[0]);
+      return new Date(s);
+    }
+
+    function calcDays() {
+      const sd = document.getElementById('startDate')?.value;
+      const ed = document.getElementById('endDate')?.value;
+      if (!sd || !ed) return 0;
+      try {
+        const d1 = parsePtDate(sd), d2 = parsePtDate(ed);
+        const diff = Math.round((d2 - d1) / 86400000);
+        return diff > 0 ? diff : 0;
+      } catch(e) { return 0; }
+    }
+
+    function calcExtras(days) {
+      let t = 0;
+      document.querySelectorAll('.extra-cb:checked').forEach(cb => {
+        t += (parseFloat(cb.dataset.dailyPrice) || 0) * days;
+      });
+      return t;
+    }
+
+    function updateTotal() {
+      const days  = calcDays();
+      const extra = calcExtras(days);
+      const total = DAILY_RATE * days + extra;
+      const el = id => document.getElementById(id);
+      if (el('reservation-days'))     el('reservation-days').textContent     = days > 0 ? days : '—';
+      if (el('reservation-total'))    el('reservation-total').textContent    = total.toFixed(2);
+      if (el('extras-total-display')) el('extras-total-display').textContent = extra.toFixed(2) + '€';
+      if (el('reservation-total_inline')) el('reservation-total_inline').textContent = total.toFixed(2);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      ['startDate','endDate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('change', updateTotal);
+          el.addEventListener('input', updateTotal);
+        }
+      });
+      document.querySelectorAll('.extra-cb').forEach(cb => cb.addEventListener('change', updateTotal));
+      updateTotal();
+    });
+</script>
+</body>
 </html>

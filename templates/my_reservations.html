@@ -1,79 +1,84 @@
 <!doctype html>
 <html lang="pt">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>As minhas reservas - Luxury Wheels</title>
-    <link href="assets/css/fontawesome.min.css" rel="stylesheet" />
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="assets/css/animate.css" rel="stylesheet" />
-    <link href="assets/css/main.css" rel="stylesheet" />
-  </head>
-  <body>
-   {% include 'partials/navbar.html' %}
- {% include 'partials/flash.html' %}
-    <!-- banner -->
-    <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
-      <div class="container">
+    <link href="assets/css/fontawesome.min.css" rel="stylesheet"/>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="assets/css/animate.css" rel="stylesheet"/>
+    <link href="assets/css/main.css" rel="stylesheet"/>
+</head>
+<body>
+{% include 'partials/navbar.html' %}
+{% include 'partials/flash.html' %}
+<!-- banner -->
+<section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
+    <div class="container">
         <div class="row">
-          <div class="col-md-12">
-            <h2 class="page-title">As minhas reservas</h2>
-            <ol class="page-list">
-              <li>
-                <a href="{{ url_for('home') }}"><i class="fa fa-home"></i> Início</a>
-              </li>
-              <li>As minhas reservas</li>
-            </ol>
-          </div>
+            <div class="col-md-12">
+                <h2 class="page-title">As minhas reservas</h2>
+                <ol class="page-list">
+                    <li>
+                        <a href="{{ url_for('home') }}"><i class="fa fa-home"></i> Início</a>
+                    </li>
+                    <li>As minhas reservas</li>
+                </ol>
+            </div>
         </div>
-      </div>
-    </section>
+    </div>
+</section>
 
-    <!-- conteudo -->
-    <section class="pt-120 pb-120">
-      <div class="container">
+<!-- conteudo -->
+<section class="pt-120 pb-120">
+    <div class="container">
         <!-- flash messages -->
         {% include 'partials/flash.html' %}
         {% if reservations %}
         <div class="row">
-          {% for r in reservations %}
-          <div class="col-lg-6 mb-30">
-              <div class="car-item" style="border:1px solid #eee;border-radius:8px;padding:20px;">
-                <h4 class="title mb-10">{{ r.vehicle_brand }} {{ r.vehicle_model }}</h4>
-                <span class="badge" style="background:#f5f5f5;padding:4px 10px;border-radius:4px;font-size:12px;">
+            {% for r in reservations %}
+            <div class="col-lg-6 mb-30">
+                <div class="car-item" style="border:1px solid #eee;border-radius:8px;padding:20px;">
+                    <h4 class="title mb-10">{{ r.vehicle_brand }} {{ r.vehicle_model }}</h4>
+                    <span class="badge" style="background:#f5f5f5;padding:4px 10px;border-radius:4px;font-size:12px;">
                   {{ r.status_name }}
                 </span>
-                <ul style="list-style:none;padding:0;margin-top:12px;">
-                  <li><i class="fa fa-calendar"></i> Início: <strong>{{ r.startDate_display or r.startDate }}</strong></li>
-                  <li><i class="fa fa-calendar"></i> Fim: <strong>{{ r.endDate_display or r.endDate }}</strong></li>
-                  <li><i class="fa fa-clock-o"></i> Dias: <strong>{{ r.totalDays }}</strong></li>
-                  <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
-                </ul>
-                {% if r.can_edit %}
-                <div style="display:flex;gap:10px;margin-top:12px;">
-                  <a class="cmn-btn" href="{{ url_for('reservations.edit_reservation', rid=r.id) }}"
-                     style="padding:8px 16px;font-size:13px;">Editar datas</a>
-                  <form method="post" action="{{ url_for('reservations.cancel_reservation', rid=r.id) }}" class="confirm-form" data-confirm="Cancelar esta reserva?">
-                    <button type="submit" class="cmn-btn bg-black" style="padding:8px 16px;font-size:13px;">Cancelar</button>
-                  </form>
+                    <ul style="list-style:none;padding:0;margin-top:12px;">
+                        <li><i class="fa fa-calendar"></i> Início: <strong>{{ r.startDate_display or r.startDate
+                            }}</strong></li>
+                        <li><i class="fa fa-calendar"></i> Fim: <strong>{{ r.endDate_display or r.endDate }}</strong>
+                        </li>
+                        <li><i class="fa fa-clock-o"></i> Dias: <strong>{{ r.totalDays }}</strong></li>
+                        <li><i class="fa fa-money"></i> Total: <strong>{{ r.totalPrice }}€</strong></li>
+                    </ul>
+                    {% if r.can_edit %}
+                    <div style="display:flex;gap:10px;margin-top:12px;">
+                        <a class="cmn-btn" href="{{ url_for('reservations.edit_reservation', rid=r.id) }}"
+                           style="padding:8px 16px;font-size:13px;">Editar datas</a>
+                        <form method="post" action="{{ url_for('reservations.cancel_reservation', rid=r.id) }}"
+                              class="confirm-form" data-confirm="Cancelar esta reserva?">
+                            <button type="submit" class="cmn-btn bg-black" style="padding:8px 16px;font-size:13px;">
+                                Cancelar
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-              </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="text-center py-5">
-          <p style="font-size: 18px; color: #888">Ainda não tens reservas.</p>
-          <a class="cmn-btn mt-20" href="{{ url_for('vehicles.list_view') }}">Ver carros disponíveis</a>
+            <p style="font-size: 18px; color: #888">Ainda não tens reservas.</p>
+            <a class="cmn-btn mt-20" href="{{ url_for('vehicles.list_view') }}">Ver carros disponíveis</a>
         </div>
         {% endif %}
-      </div>
-    </section>
+    </div>
+</section>
 
-    {% include 'partials/footer.html' %}
-    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  </body>
+{% include 'partials/footer.html' %}
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
 </html>

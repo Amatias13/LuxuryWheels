@@ -160,7 +160,7 @@
                         <select name="type_filter">
                           <option value="">Todos os tipos</option>
                           {% for t in types %}
-                          <option value="{{ t.id }}" {% if type_filter and type_filter == t.id %}selected{% endif %}>{{ t.name }}</option>
+                            <option value="{{ t.id }}" {% if type_filter and type_filter|string == t.id|string %}selected{% endif %}>{{ t.name }}</option>
                           {% endfor %}
                         </select>
                       </div>
@@ -168,7 +168,7 @@
                         <select name="brand_filter">
                           <option value="">Todas as marcas</option>
                           {% for b in brands %}
-                          <option value="{{ b.id }}" {% if brand_filter and brand_filter == b.id %}selected{% endif %}>{{ b.name }}</option>
+                            <option value="{{ b.id }}" {% if brand_filter and brand_filter|string == b.id|string %}selected{% endif %}>{{ b.name }}</option>
                           {% endfor %}
                         </select>
                       </div>
@@ -176,7 +176,7 @@
                         <select name="category_filter">
                           <option value="">Todas as categorias</option>
                             {% for c in categories %}
-                            <option value="{{ c.id }}" {% if category_filter and category_filter == c.id %}selected{% endif %}>{{ c.name }}</option>
+                              <option value="{{ c.id }}" {% if category_filter and category_filter|string == c.id|string %}selected{% endif %}>{{ c.name }}</option>
                             {% endfor %}
                         </select>
                       </div>
@@ -184,7 +184,7 @@
                           <select name="capacity_filter">
                             <option value="">Qualquer capacidade</option>
                             {% for n in range(1,9) %}
-                            <option value="{{ n }}" {% if capacity_filter and capacity_filter == n %}selected{% endif %}>{{ n }} pessoas</option>
+                              <option value="{{ n }}" {% if capacity_filter and capacity_filter|string == n|string %}selected{% endif %}>{{ n }} pessoas</option>
                             {% endfor %}
                             <option value="9+" {% if capacity_filter and capacity_filter >= 9 %}selected{% endif %}>9+ pessoas</option>
                           </select>

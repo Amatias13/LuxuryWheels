@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from database import init_db, db
 
 app = Flask(__name__, static_folder="templates/assets", static_url_path="/assets")
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
 init_db(app)
 
@@ -92,3 +93,7 @@ def inject_current_user():
         "current_user": user,
         "is_logged_in": bool(user_id),
     }
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

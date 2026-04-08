@@ -10,12 +10,15 @@ from models import (
     Payment,
 )
 from models.Status import ReservationStates
+from datetime import datetime
 
 bp = Blueprint("reservations", __name__)
 
 
 @bp.route("/reservation", methods=["GET"])
 def reservation():
+    from datetime import datetime, time as dt_time
+
     vehicle_id = request.args.get("vehicle_id")
     vehicle = Vehicle.query.get(vehicle_id) if vehicle_id else None
     # Read possible date/time filters (ISO: YYYY-MM-DD and optional time)
@@ -64,7 +67,6 @@ def reservation():
         end_date = ed
         # also prepare datetimes when times are present so availability checks
         # can use precise datetimes
-        from datetime import datetime, time as dt_time
         start_dt = None
         end_dt = None
         if sd is not None:
@@ -79,24 +81,18 @@ def reservation():
     if vehicle_id and not vehicle:
         flash("Veículo não encontrado.", "modal-error")
         return redirect(url_for("vehicles.list_view"))
-    # If a specific vehicle was requested but it's not available, block access
-    if vehicle_id and vehicle:
+    # If dates were provided, check availability for that interval.
+    # This is important to avoid showing a vehicle as available when it is not for the selected dates.
+    if vehicle_id and vehicle and start_dt and end_dt:
         try:
-            if start_dt and end_dt:
-                avail_check_start = start_dt
-                avail_check_end = end_dt
-            else:
-                avail_check_start = start_date
-                avail_check_end = end_date
-            if not vehicle.is_available(avail_check_start, avail_check_end):
-                flash("Veículo indisponível.", "modal-error")
+            if not vehicle.is_available(start_dt, end_dt):
+                flash("Veículo indisponível para o período selecionado.", "modal-error")
                 return redirect(url_for("vehicles.list_view"))
         except Exception as e:
-            # if availability check errors, be conservative and block
             logging.exception("Error checking vehicle availability")
-            flash("Veículo indisponível.", "modal-error")
+            flash("Erro ao verificar disponibilidade.", "modal-error")
             return redirect(url_for("vehicles.list_view"))
-    # Disponibility of the vehicle (to control button in template) 
+    # Availability of the vehicle (to control button in template)
     vehicle_available = True
     if vehicle:
         try:
@@ -139,6 +135,7 @@ def reservation():
         endTime=end_time_raw,
         testimonials=testimonials,
         vehicle_available=vehicle_available,
+        now=datetime.now
     )
 
 
@@ -167,15 +164,20 @@ def my_reservations():
         # Human-friendly datetime display (no 'T' and no seconds)
         try:
             # PT-friendly format: DD/MM/YYYY HH:MM
-            d["startDate_display"] = r.startDate.strftime('%d/%m/%Y %H:%M') if r.startDate else ''
+            d["startDate_display"] = (
+                r.startDate.strftime("%d/%m/%Y %H:%M") if r.startDate else ""
+            )
         except Exception:
             d["startDate_display"] = d.get("startDate", "")
         try:
-            d["endDate_display"] = r.endDate.strftime('%d/%m/%Y %H:%M') if r.endDate else ''
+            d["endDate_display"] = (
+                r.endDate.strftime("%d/%m/%Y %H:%M") if r.endDate else ""
+            )
         except Exception:
             d["endDate_display"] = d.get("endDate", "")
         # do not allow editing/cancellation if already cancelled/completed or if the reservation has already started
         from datetime import date
+
         today = date.today()
         started = False
         try:
@@ -183,8 +185,9 @@ def my_reservations():
         except Exception:
             started = False
         d["can_edit"] = (
-            r.idReservationStatus not in (ReservationStates.CANCELLED, ReservationStates.COMPLETED)
-            and not started
+                r.idReservationStatus
+                not in (ReservationStates.CANCELLED, ReservationStates.COMPLETED)
+                and not started
         )
         data.append(d)
 
@@ -224,7 +227,35 @@ def reserve():
             raise ValueError("Datas de início e fim são obrigatórias")
         if not payment_method_id:
             raise ValueError("Selecione um método de pagamento")
-        
+
+        try:
+            raw = (data["startDate"] or "").strip()
+            parsed_dt = None
+            # Try PT format with time: DD/MM/YYYY HH:MM
+            try:
+                parsed_dt = datetime.strptime(raw, "%d/%m/%Y %H:%M")
+            except ValueError:
+                # Try PT format without time: DD/MM/YYYY
+                try:
+                    parsed_dt = datetime.strptime(raw, "%d/%m/%Y")
+                except ValueError:
+                    # Try ISO formats (YYYY-MM-DD or YYYY-MM-DDTHH:MM[:SS])
+                    try:
+                        parsed_dt = datetime.fromisoformat(raw)
+                    except Exception:
+                        parsed_dt = None
+
+            if not parsed_dt:
+                raise ValueError("Data de levantamento inválida.")
+
+            start_date = parsed_dt.date()
+            if start_date < datetime.today().date():
+                flash('A data de levantamento não pode ser no passado.', 'error')
+                return redirect(request.referrer or url_for('reservations.reservation'))
+        except ValueError:
+            flash('Data de levantamento inválida.', 'error')
+            return redirect(request.referrer or url_for('reservations.reservation'))
+
         # Create reservation (includes extras; marks vehicle as inactive - T4)
         reservation, vehicle, total_price = Reservation.create(
             data, extras=extras_selected

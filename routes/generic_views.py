@@ -1,15 +1,25 @@
-from flask import Blueprint, render_template, request
-from datetime import date, timedelta
 import logging
+from datetime import date, timedelta
+
+from flask import Blueprint, render_template, request
 
 # Ensure models are loaded and import common model classes at module level
 from models import ensure_loaded
+
 ensure_loaded()
 
 
-def make_list_blueprint(bp_name, route_path, model, template, context_key='items',
-                                                 extra_models=None, per_page=8, search_fields=None,
-                                                 brand_lookup=None):
+def make_list_blueprint(
+    bp_name,
+    route_path,
+    model,
+    template,
+    context_key="items",
+    extra_models=None,
+    per_page=8,
+    search_fields=None,
+    brand_lookup=None,
+):
     """Blueprint com paginacao, filtros de pesquisa e modelos extra.
     New optional params:
     - `search_fields`: iterable of attribute names on `model` to perform ilike search.
@@ -20,7 +30,8 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
     @bp.route(route_path)
     def list_view():
-        page = request.args.get('page', 1, type=int)
+        page = request.args.get("page", 1, type=int)
+
         # Helper: obter último valor não-vazio para um argumento (lida com chaves duplicadas)
         def last_nonempty_arg(name, cast=None):
             vals = request.args.getlist(name)
@@ -30,7 +41,7 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 if v is None:
                     continue
                 s = str(v).strip()
-                if s == '':
+                if s == "":
                     continue
                 if cast:
                     try:
@@ -39,21 +50,21 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                         return None
                 return s
 
-        search = (last_nonempty_arg('car_search') or '').strip()
-        # Read optional dates for availability filtering. 
+        search = (last_nonempty_arg("car_search") or "").strip()
+        # Read optional dates for availability filtering.
         # If provided, availability is determined by reservation overlap.
-        #  If not provided, availability is determined by technical checks (revision/legalization). 
+        #  If not provided, availability is determined by technical checks (revision/legalization).
         # This allows editing an existing reservation using `exclude_reservation_id` to ignore the reservation itself in availability validation.
-        start_raw = last_nonempty_arg('startDate')
-        end_raw = last_nonempty_arg('endDate')
-        start_time_raw = last_nonempty_arg('startTime')
-        end_time_raw = last_nonempty_arg('endTime')
+        start_raw = last_nonempty_arg("startDate")
+        end_raw = last_nonempty_arg("endDate")
+        start_time_raw = last_nonempty_arg("startTime")
+        end_time_raw = last_nonempty_arg("endTime")
         # Normalize time strings for UI/timepicker. Convert values like
         # "9" or "9:00" into a standard "HH:MM AM/PM" format so the
         # client-side picker initializes with the correct time instead
         # of falling back to its default (e.g. "12:35").
         from utils import parse_time
-        from datetime import time as dt_time
+
         try:
             if start_time_raw:
                 t = parse_time(start_time_raw)
@@ -87,20 +98,20 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             logging.debug("Invalid date filters: %s", e)
             start_date = None
             end_date = None
-        type_filter = last_nonempty_arg('type_filter', cast=int)
-        category_filter = last_nonempty_arg('category_filter', cast=int)
-        brand_filter = last_nonempty_arg('brand_filter', cast=int)
-        min_price = last_nonempty_arg('min_price', cast=float)
-        max_price = last_nonempty_arg('max_price', cast=float)
+        type_filter = last_nonempty_arg("type_filter", cast=int)
+        category_filter = last_nonempty_arg("category_filter", cast=int)
+        brand_filter = last_nonempty_arg("brand_filter", cast=int)
+        min_price = last_nonempty_arg("min_price", cast=float)
+        max_price = last_nonempty_arg("max_price", cast=float)
         # Optional ordering: 'price_asc' or 'price_desc'
-        order_by = last_nonempty_arg('order_by')
+        order_by = last_nonempty_arg("order_by")
         # capacity_filter may be '9+' in UI; tratar esse caso
-        cap_raw = last_nonempty_arg('capacity_filter')
+        cap_raw = last_nonempty_arg("capacity_filter")
         capacity_filter = None
         if cap_raw:
-            if str(cap_raw).endswith('+'):
+            if str(cap_raw).endswith("+"):
                 try:
-                    capacity_filter = int(str(cap_raw).replace('+', ''))
+                    capacity_filter = int(str(cap_raw).replace("+", ""))
                 except (ValueError, TypeError):
                     capacity_filter = None
             else:
@@ -111,8 +122,8 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         query = model.query
 
-        # T5: exclude vehicles with overdue revision or legalization > 1 year 
-        if hasattr(model, 'nextRevisionDate'):
+        # T5: exclude vehicles with overdue revision or legalization > 1 year
+        if hasattr(model, "nextRevisionDate"):
             today = date.today()
             one_year_ago = today - timedelta(days=365)
             # Always apply technical checks (revision/legalization). Do NOT
@@ -130,7 +141,7 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 for field in search_fields:
                     if hasattr(model, field):
                         try:
-                            filters.append(getattr(model, field).ilike(f'%{search}%'))
+                            filters.append(getattr(model, field).ilike(f"%{search}%"))
                         except Exception:
                             # skip invalid fields
                             pass
@@ -138,11 +149,13 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             # Optional brand lookup: expects a dict {'model': BrandModel, 'name_field': 'name', 'id_field': 'idBrand'}
             if brand_lookup and isinstance(brand_lookup, dict):
                 try:
-                    brand_model = brand_lookup.get('model')
-                    name_field = brand_lookup.get('name_field')
-                    id_field = brand_lookup.get('id_field')
+                    brand_model = brand_lookup.get("model")
+                    name_field = brand_lookup.get("name_field")
+                    id_field = brand_lookup.get("id_field")
                     if brand_model and name_field and id_field:
-                        brand_q = brand_model.query.filter(getattr(brand_model, name_field).ilike(f'%{search}%'))
+                        brand_q = brand_model.query.filter(
+                            getattr(brand_model, name_field).ilike(f"%{search}%")
+                        )
                         brand_ids = [getattr(b, id_field) for b in brand_q.all()]
                         if hasattr(model, id_field):
                             filters.append(getattr(model, id_field).in_(brand_ids))
@@ -153,43 +166,57 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
             if filters:
                 query = query.filter(db_or(*filters))
 
-        if type_filter and hasattr(model, 'idType'):
+        if type_filter and hasattr(model, "idType"):
             query = query.filter(model.idType == type_filter)
 
-        if brand_filter and hasattr(model, 'idBrand'):
+        if brand_filter and hasattr(model, "idBrand"):
             query = query.filter(model.idBrand == brand_filter)
 
-        if category_filter and hasattr(model, 'idCategory'):
+        if category_filter and hasattr(model, "idCategory"):
             query = query.filter(model.idCategory == category_filter)
 
-        if min_price is not None and hasattr(model, 'dailyRate'):
+        if min_price is not None and hasattr(model, "dailyRate"):
             query = query.filter(model.dailyRate >= min_price)
-        if max_price is not None and hasattr(model, 'dailyRate'):
+        if max_price is not None and hasattr(model, "dailyRate"):
             query = query.filter(model.dailyRate <= max_price)
 
-        if capacity_filter and hasattr(model, 'capacity'):
+        if capacity_filter and hasattr(model, "capacity"):
             query = query.filter(model.capacity >= capacity_filter)
 
         # Apply ordering if requested and supported by the model
         try:
             if order_by:
                 # price ordering
-                if order_by in ('price_asc', 'price_desc') and hasattr(model, 'dailyRate'):
-                    query = query.order_by(model.dailyRate.asc() if order_by == 'price_asc' else model.dailyRate.desc())
+                if order_by in ("price_asc", "price_desc") and hasattr(
+                    model, "dailyRate"
+                ):
+                    query = query.order_by(
+                        model.dailyRate.asc()
+                        if order_by == "price_asc"
+                        else model.dailyRate.desc()
+                    )
                 # type/name ordering (string fields)
-                elif order_by in ('type_asc', 'type_desc'):
-                    if hasattr(model, 'type'):
-                        col = getattr(model, 'type')
-                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
-                    elif hasattr(model, 'name'):
-                        col = getattr(model, 'name')
-                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
-                    elif hasattr(model, 'model'):
-                        col = getattr(model, 'model')
-                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
-                    elif hasattr(model, 'idType'):
-                        col = getattr(model, 'idType')
-                        query = query.order_by(col.asc() if order_by == 'type_asc' else col.desc())
+                elif order_by in ("type_asc", "type_desc"):
+                    if hasattr(model, "type"):
+                        col = getattr(model, "type")
+                        query = query.order_by(
+                            col.asc() if order_by == "type_asc" else col.desc()
+                        )
+                    elif hasattr(model, "name"):
+                        col = getattr(model, "name")
+                        query = query.order_by(
+                            col.asc() if order_by == "type_asc" else col.desc()
+                        )
+                    elif hasattr(model, "model"):
+                        col = getattr(model, "model")
+                        query = query.order_by(
+                            col.asc() if order_by == "type_asc" else col.desc()
+                        )
+                    elif hasattr(model, "idType"):
+                        col = getattr(model, "idType")
+                        query = query.order_by(
+                            col.asc() if order_by == "type_asc" else col.desc()
+                        )
         except Exception:
             # ignore ordering failures
             pass
@@ -207,7 +234,7 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                 # "now..now+1d" interval as a hard exclusion so
                 # search results still show matching vehicles (they
                 # will be marked unavailable in the UI instead).
-                if hasattr(o, 'is_available'):
+                if hasattr(o, "is_available"):
                     try:
                         # If the user provided any explicit date/time
                         # filters, calculate availability for that interval
@@ -241,23 +268,28 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
                             try:
                                 if end_time_raw:
                                     et = parse_time(end_time_raw)
-                                    ed = end_date or (start_date or date.today()) + timedelta(days=1)
+                                    ed = end_date or (
+                                        start_date or date.today()
+                                    ) + timedelta(days=1)
                                     end_arg = datetime.combine(ed, et)
                             except Exception:
                                 pass
 
-                            od['available'] = o.is_available(start_arg, end_arg)
-                            if not od['available']:
+                            od["available"] = o.is_available(start_arg, end_arg)
+                            if not od["available"]:
                                 # when dates provided, skip unavailable vehicles
                                 continue
                         else:
-                            # No date filters -> don't perform reservation overlap
-                            # exclusion. Still expose `available=True` so the
-                            # template can render the correct state.
-                            od['available'] = True
+                            from datetime import datetime
+
+                            now_dt = datetime.now()
+                            end_now = now_dt + timedelta(hours=1)
+                            od["available"] = o.is_available(now_dt, end_now)
                     except Exception as e:
                         # In case of error when validating availability, skip the vehicle
-                        logging.exception("Error checking availability for item in list")
+                        logging.exception(
+                            "Error checking availability for item in list"
+                        )
                         continue
             except Exception as e:
                 logging.exception("Error processing item for listing")
@@ -266,17 +298,18 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
         context = {
             context_key: data,
-            'pagination': pagination,
-            'search': search,
-            'startDate': start_raw,
-            'endDate': end_raw,
-            'startTime': start_time_raw,
-            'endTime': end_time_raw,
-            'type_filter': type_filter,
-            'category_filter': category_filter,
-            'min_price': min_price,
-            'max_price': max_price,
-            'capacity_filter': capacity_filter,
+            "pagination": pagination,
+            "search": search,
+            "startDate": start_raw,
+            "endDate": end_raw,
+            "startTime": start_time_raw,
+            "endTime": end_time_raw,
+            "type_filter": type_filter,
+            "category_filter": category_filter,
+            "min_price": min_price,
+            "max_price": max_price,
+            "capacity_filter": capacity_filter,
+            "brand_filter": brand_filter,
         }
 
         if extra_models:
@@ -294,4 +327,5 @@ def make_list_blueprint(bp_name, route_path, model, template, context_key='items
 
 def db_or(*args):
     from sqlalchemy import or_
+
     return or_(*args)

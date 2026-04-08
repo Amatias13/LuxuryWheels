@@ -1,106 +1,107 @@
 <!doctype html>
 
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewpout" />
-    <meta content="ie=edge" http-equiv="X-UA-Compatible" />
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewpout"/>
+    <meta content="ie=edge" http-equiv="X-UA-Compatible"/>
     <title>Luxury Wheels - HTML Template</title>
     <!-- site favicon -->
-    <link href="assets/images/favicon.jpg" rel="shoutcut icon" type="image/png" />
+    <link href="assets/images/favicon.jpg" rel="shoutcut icon" type="image/png"/>
     <!-- fontawesome css link -->
-    <link href="assets/css/fontawesome.min.css" rel="stylesheet" />
+    <link href="assets/css/fontawesome.min.css" rel="stylesheet"/>
     <!-- bootstrap css link -->
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet"/>
     <!-- lightcase css link -->
-    <link href="assets/css/lightcase.css" rel="stylesheet" />
+    <link href="assets/css/lightcase.css" rel="stylesheet"/>
     <!-- animate css link -->
-    <link href="assets/css/animate.css" rel="stylesheet" />
+    <link href="assets/css/animate.css" rel="stylesheet"/>
     <!-- nice select css link -->
-    <link href="assets/css/nice-select.css" rel="stylesheet" />
+    <link href="assets/css/nice-select.css" rel="stylesheet"/>
     <!-- datepicker css link -->
-    <link href="assets/css/datepicker.min.css" rel="stylesheet" />
+    <link href="assets/css/datepicker.min.css" rel="stylesheet"/>
     <!-- wickedpicker css link -->
-    <link href="assets/css/wickedpicker.min.css" rel="stylesheet" />
+    <link href="assets/css/wickedpicker.min.css" rel="stylesheet"/>
     <!-- jquery ui css link -->
-    <link href="assets/css/jquery-ui.min.css" rel="stylesheet" />
+    <link href="assets/css/jquery-ui.min.css" rel="stylesheet"/>
     <!-- owl carousel css link -->
-    <link href="assets/css/owl.carousel.min.css" rel="stylesheet" />
+    <link href="assets/css/owl.carousel.min.css" rel="stylesheet"/>
     <!-- main style css link -->
-    <link href="assets/css/main.css" rel="stylesheet" />
-  </head>
-  <body>
-    <!--  header-section start  -->
-    {% include 'partials/navbar.html' %}
- {% include 'partials/flash.html' %}
-    <!-- inner-page-banner start -->
-    <section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
-      <div class="container">
+    <link href="assets/css/main.css" rel="stylesheet"/>
+</head>
+<body>
+<!--  header-section start  -->
+{% include 'partials/navbar.html' %}
+{% include 'partials/flash.html' %}
+<!-- inner-page-banner start -->
+<section class="inner-page-banner bg_img overlay-3" data-background="assets/images/inner-page-bg.jpg">
+    <div class="container">
         <div class="row">
-          <div class="col-md-12">
-            <h2 class="page-title">Iniciar sessão</h2>
-            <ol class="page-list">
-              <li>
-                <a href="{{ url_for('home') }}"><i class="fa fa-home"></i>Início</a>
-              </li>
-              <li>Iniciar sessão</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- inner-page-banner end -->
-    <!-- login-section start -->
-    <section class="login-section pt-120 pb-120">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="login-block text-center">
-              <div class="login-block-inner">
-                <h3 class="title">inicie sessão na sua conta</h3>
-                <form class="login-form" method="post" action="{{ url_for('users.login', next=next) }}">
-                  <input type="hidden" name="next" value="{{ next }}">
-                  <div class="frm-group">
-                    <input id="email" name="email" placeholder="O seu email" type="email" required />
-                  </div>
-                  <div class="frm-group">
-                    <input id="password" name="password" placeholder="Palavra-passe" type="password" required />
-                  </div>
-                  <div class="frm-group">
-                    <input type="submit" value="iniciar sessão" />
-                  </div>
-                </form>
-                <p><a href="{{ url_for('users.register') }}">Ainda não tem conta aqui?</a> <a href="#0">Esqueceu a palavra-passe?</a></p>
-              </div>
+            <div class="col-md-12">
+                <h2 class="page-title">Iniciar sessão</h2>
+                <ol class="page-list">
+                    <li>
+                        <a href="{{ url_for('home') }}"><i class="fa fa-home"></i>Início</a>
+                    </li>
+                    <li>Iniciar sessão</li>
+                </ol>
             </div>
-          </div>
         </div>
-      </div>
-    </section>
-    <!-- login-section end -->
-    {% include 'partials/footer.html' %}
-    <!-- jquery js link -->
-    <script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <!-- jquery migrate js link -->
-    <script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
-    <!-- bootstrap js link -->
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <!-- lightcase js link -->
-    <script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
-    <!-- wow js link -->
-    <script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
-    <!-- nice select js link -->
-    <script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
-    <!-- datepicker js link -->
-    <script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
-    <!-- wickedpicker js link -->
-    <script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
-    <!-- owl carousel js link -->
-    <script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
-    <!-- jquery ui js link -->
-    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
-    <!-- main js link -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  </body>
+    </div>
+</section>
+<!-- inner-page-banner end -->
+<!-- login-section start -->
+<section class="login-section pt-120 pb-120">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="login-block text-center">
+                    <div class="login-block-inner">
+                        <h3 class="title">inicie sessão na sua conta</h3>
+                        <form class="login-form" method="post" action="{{ url_for('users.login', next=next) }}">
+                            <input type="hidden" name="next" value="{{ next }}">
+                            <div class="frm-group">
+                                <input id="email" name="email" placeholder="O seu email" type="email" required/>
+                            </div>
+                            <div class="frm-group">
+                                <input id="password" name="password" placeholder="Palavra-passe" type="password"
+                                       required/>
+                            </div>
+                            <div class="frm-group">
+                                <input type="submit" value="iniciar sessão"/>
+                            </div>
+                        </form>
+                        <p><a href="{{ url_for('users.register') }}">Ainda não tem conta aqui?</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- login-section end -->
+{% include 'partials/footer.html' %}
+<!-- jquery js link -->
+<script src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+<!-- jquery migrate js link -->
+<script src="{{ url_for('static', filename='js/jquery-migrate-3.0.0.js') }}"></script>
+<!-- bootstrap js link -->
+<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+<!-- lightcase js link -->
+<script src="{{ url_for('static', filename='js/lightcase.js') }}"></script>
+<!-- wow js link -->
+<script src="{{ url_for('static', filename='js/wow.min.js') }}"></script>
+<!-- nice select js link -->
+<script src="{{ url_for('static', filename='js/jquery.nice-select.min.js') }}"></script>
+<!-- datepicker js link -->
+<script src="{{ url_for('static', filename='js/datepicker.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datepicker.pt.js') }}"></script>
+<!-- wickedpicker js link -->
+<script src="{{ url_for('static', filename='js/wickedpicker.min.js') }}"></script>
+<!-- owl carousel js link -->
+<script src="{{ url_for('static', filename='js/owl.carousel.min.js') }}"></script>
+<!-- jquery ui js link -->
+<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+<!-- main js link -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
 </html>
